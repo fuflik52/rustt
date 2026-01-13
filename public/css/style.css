@@ -1559,6 +1559,35 @@ body::after {
     opacity: 0.3;
 }
 
+/* Placeholder icons for empty slots */
+.item-slot.placeholder {
+    cursor: pointer;
+}
+
+.item-slot .slot-placeholder-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.25;
+    filter: grayscale(100%);
+    transition: all 0.2s;
+}
+
+.item-slot:hover .slot-placeholder-icon {
+    opacity: 0.5;
+    filter: grayscale(50%);
+}
+
+.item-slot.locked .slot-placeholder-icon {
+    width: 14px;
+    height: 14px;
+    opacity: 0.15;
+}
+
+.item-slot.locked:hover .slot-placeholder-icon {
+    opacity: 0.15;
+    filter: grayscale(100%);
+}
+
 /* Ammo slot - 5th slot for ammo */
 .item-slot.ammo-slot {
     position: relative;
@@ -1920,6 +1949,16 @@ body::after {
     transition: all 0.2s;
 }
 
+.ammo-field input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.ammo-field input[type="number"]::-webkit-outer-spin-button,
+.ammo-field input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .ammo-field select:focus,
 .ammo-field input:focus {
     outline: none;
@@ -1949,6 +1988,53 @@ body::after {
     font-weight: 500;
 }
 
+/* Ammo Picker Grid */
+.ammo-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.ammo-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ammo-picker-item:hover {
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.ammo-picker-item.selected {
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.ammo-picker-item img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.ammo-picker-item span {
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.ammo-picker-item.selected span {
+    color: var(--accent);
+}
+
 .ammo-modal-footer {
     display: flex;
     gap: 10px;
@@ -1970,4 +2056,221 @@ body::after {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ============ CLIPBOARD BANNER ============ */
+.clipboard-banner {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clipboard-banner.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.clipboard-banner-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.clipboard-banner-icon svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+}
+
+.clipboard-banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.clipboard-banner-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.clipboard-banner-info {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.clipboard-banner-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+}
+
+.clipboard-banner-hint kbd {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-family: inherit;
+}
+
+.clipboard-banner-close {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-left: 4px;
+}
+
+.clipboard-banner-close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text);
+}
+
+.clipboard-banner-close svg {
+    width: 16px;
+    height: 16px;
+}
+
+
+/* ============ PERMISSION MODAL ============ */
+.permission-modal-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: var(--accent);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.permission-modal-icon svg {
+    width: 32px;
+    height: 32px;
+    color: white;
+}
+
+#clipboardPermissionModal .modal-content {
+    text-align: center;
+    padding: 32px 24px;
+}
+
+#clipboardPermissionModal h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+#clipboardPermissionModal p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.permission-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.permission-modal-actions .btn {
+    min-width: 120px;
+    justify-content: center;
+}
+
+
+/* Permission steps */
+.permission-steps {
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.permission-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.permission-step:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 4px;
+}
+
+.permission-step .step-num {
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.permission-step span:last-child {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    line-height: 1.5;
+}
+
+.permission-step svg {
+    color: var(--text-muted);
+    vertical-align: middle;
+}
+
+
+/* Item icon in clipboard banner */
+.clipboard-banner-icon.item-icon {
+    background: var(--bg-tertiary);
+    padding: 6px;
+}
+
+.clipboard-banner-icon.item-icon img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
 }

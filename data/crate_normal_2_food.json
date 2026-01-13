@@ -6,35 +6,19 @@
   },
   "lootPresets": [
     {
-      "shortname": "explosive.timed",
+      "shortname": "rifle.ak",
       "displayName": "",
       "rareDrop": 33,
-      "isBplueprint": false,
-      "amount": {
-        "minAmount": 7,
-        "maxAmount": 10
-      }
-    },
-    {
-      "shortname": "lmg.m249",
-      "displayName": "",
-      "rareDrop": 15,
       "isBplueprint": false,
       "amount": {
         "minAmount": 1,
         "maxAmount": 1
       },
-      "ammo": {
-        "shortname": "ammo.rifle",
-        "amount": 100
-      },
-      "ammoType": "ammo.rifle",
-      "ammoAmount": 100,
       "attachments": [
-        "weapon.mod.simplesight",
+        "weapon.mod.holosight",
         "weapon.mod.lasersight",
-        "weapon.mod.muzzlebrake",
-        "weapon.mod.extendedmags"
+        "weapon.mod.extendedmags",
+        "weapon.mod.muzzleboost"
       ]
     },
     {

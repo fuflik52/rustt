@@ -86,11 +86,17 @@ function renderItems() {
         // 5-й слот для патронов (для оружия)
         const ammoSlot = (item.ammo && item.ammo.shortname)
             ? `<div class="item-slot ammo-slot filled" onclick="event.stopPropagation(); openAmmoModal(${index})" title="${item.ammo.shortname} x${item.ammo.amount || 0}"><img src="/icons/${encodeURIComponent(item.ammo.shortname)}.png"><span class="ammo-count">${item.ammo.amount || 0}</span></div>`
-            : `<div class="item-slot ammo-slot" onclick="event.stopPropagation(); openAmmoModal(${index})" title="Добавить патроны"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>`;
+            : `<div class="item-slot ammo-slot placeholder" onclick="event.stopPropagation(); openAmmoModal(${index})" title="Добавить патроны"><img src="/icons/ammo.rifle.png" class="slot-placeholder-icon"></div>`;
         
         if (isWeapon) {
             // Для оружия - 4 слота модулей + 1 слот патронов
             const slotTypes = ['scope', 'muzzle', 'magazine', 'underbarrel'];
+            const slotIcons = {
+                scope: 'weapon.mod.small.scope.png',
+                muzzle: 'weapon.mod.silencer.png',
+                magazine: 'weapon.mod.extendedmags.png',
+                underbarrel: 'weapon.mod.lasersight.png'
+            };
             slotsHtml = '<div class="item-slots">';
             slotTypes.forEach(slotType => {
                 const slotMods = MOD_SLOTS[slotType]?.mods || [];
@@ -99,7 +105,7 @@ function renderItems() {
                 if (installedMod) {
                     slotsHtml += `<div class="item-slot filled" title="${installedMod}"><img src="/icons/${encodeURIComponent(installedMod)}.png"></div>`;
                 } else {
-                    slotsHtml += `<div class="item-slot" onclick="event.stopPropagation(); openItemEdit(${index})" title="${MOD_SLOTS[slotType]?.label || slotType}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>`;
+                    slotsHtml += `<div class="item-slot placeholder" onclick="event.stopPropagation(); openItemEdit(${index})" title="${MOD_SLOTS[slotType]?.label || slotType}"><img src="/icons/${slotIcons[slotType]}" class="slot-placeholder-icon"></div>`;
                 }
             });
             slotsHtml += ammoSlot;
@@ -108,8 +114,8 @@ function renderItems() {
             // Для остальных - 1 слот чертежа + 4 заблокированных
             const bpSlot = item.isBlueprint 
                 ? `<div class="item-slot filled" onclick="event.stopPropagation(); toggleBlueprint(${index})" title="Убрать чертёж"><img src="/icons/blueprintbase.png"></div>`
-                : `<div class="item-slot" onclick="event.stopPropagation(); toggleBlueprint(${index})" title="Добавить чертёж"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>`;
-            const lockedSlot = `<div class="item-slot locked" title="Заблокировано"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>`;
+                : `<div class="item-slot placeholder" onclick="event.stopPropagation(); toggleBlueprint(${index})" title="Добавить чертёж"><img src="/icons/blueprintbase.png" class="slot-placeholder-icon"></div>`;
+            const lockedSlot = `<div class="item-slot locked"><img src="/icons/lock.key.png" class="slot-placeholder-icon"></div>`;
             slotsHtml = `<div class="item-slots">${bpSlot}${lockedSlot}${lockedSlot}${lockedSlot}${lockedSlot}</div>`;
         }
         
@@ -744,44 +750,320 @@ function removeItem(index) { removeItemLocal(index); }
 
 // ============ COPY/PASTE ITEM ============
 const CLIPBOARD_KEY = 'lootEditorClipboard';
+const CLIPBOARD_CONTAINER_KEY = 'lootEditorContainerClipboard';
 
-function copyItem(index) {
+// ============ COPY/PASTE CONTAINER ============
+const CONTAINER_CLIPBOARD_PREFIX = '###LOOT_CONTAINER###';
+const ITEM_CLIPBOARD_PREFIX = '###LOOT_ITEM###';
+
+// Проверяем есть ли разрешение на чтение буфера
+let clipboardPermissionGranted = false;
+
+async function requestClipboardPermission() {
+    try {
+        const result = await navigator.permissions.query({ name: 'clipboard-read' });
+        if (result.state === 'granted') {
+            clipboardPermissionGranted = true;
+            return true;
+        } else if (result.state === 'prompt') {
+            // Попробуем прочитать - это вызовет запрос разрешения
+            await navigator.clipboard.readText();
+            clipboardPermissionGranted = true;
+            return true;
+        }
+        return false;
+    } catch (e) {
+        // Попробуем напрямую
+        try {
+            await navigator.clipboard.readText();
+            clipboardPermissionGranted = true;
+            return true;
+        } catch (e2) {
+            return false;
+        }
+    }
+}
+
+async function copyItem(index) {
     if (index < 0 || index >= localItems.length) return;
     
     const item = JSON.parse(JSON.stringify(localItems[index]));
-    localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(item));
     
-    // Показать кнопку вставки
-    const pasteBtn = document.getElementById('pasteBtn');
-    if (pasteBtn) pasteBtn.style.display = 'flex';
-    
-    showToast(`Скопировано: ${getItemDisplayName(item.shortname)}`);
-}
-
-function pasteItem() {
-    const clipboardData = localStorage.getItem(CLIPBOARD_KEY);
-    if (!clipboardData) {
-        showToast('Буфер обмена пуст', 'error');
-        return;
-    }
+    // Копируем в реальный буфер обмена
+    const clipboardText = ITEM_CLIPBOARD_PREFIX + JSON.stringify(item);
     
     try {
-        const item = JSON.parse(clipboardData);
+        await navigator.clipboard.writeText(clipboardText);
+        
+        // Показать кнопку вставки
+        const pasteBtn = document.getElementById('pasteBtn');
+        if (pasteBtn) pasteBtn.style.display = 'flex';
+        
+        showToast(`Скопировано: ${getItemDisplayName(item.shortname)}`, 'success');
+        
+        // Показываем баннер
+        showItemClipboardBanner(item);
+    } catch (e) {
+        showToast('Ошибка копирования', 'error');
+    }
+}
+
+function showItemClipboardBanner(item) {
+    // Удаляем старый баннер если есть
+    hideClipboardBanner();
+    
+    const banner = document.createElement('div');
+    banner.className = 'clipboard-banner';
+    banner.id = 'clipboardBanner';
+    banner.innerHTML = `
+        <div class="clipboard-banner-icon item-icon">
+            <img src="/icons/${encodeURIComponent(item.shortname)}.png" onerror="this.style.display='none'">
+        </div>
+        <div class="clipboard-banner-content">
+            <span class="clipboard-banner-title">Предмет скопирован</span>
+            <span class="clipboard-banner-info">${getItemDisplayName(item.shortname)}</span>
+        </div>
+        <div class="clipboard-banner-hint">
+            <kbd>Ctrl</kbd> + <kbd>V</kbd> для вставки
+        </div>
+        <button class="clipboard-banner-close" onclick="hideClipboardBanner()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    `;
+    
+    document.body.appendChild(banner);
+    
+    // Анимация появления
+    requestAnimationFrame(() => banner.classList.add('active'));
+}
+
+async function pasteItem() {
+    try {
+        const clipboardText = await navigator.clipboard.readText();
+        
+        // Проверяем что это наш предмет
+        if (!clipboardText || !clipboardText.startsWith(ITEM_CLIPBOARD_PREFIX)) {
+            showToast('В буфере нет скопированного предмета', 'info');
+            return;
+        }
+        
+        const jsonStr = clipboardText.slice(ITEM_CLIPBOARD_PREFIX.length);
+        const item = JSON.parse(jsonStr);
+        
         localItems.push(item);
         hasChanges = true;
         renderItems();
-        showToast(`Вставлено: ${getItemDisplayName(item.shortname)}`);
+        showToast(`Вставлено: ${getItemDisplayName(item.shortname)}`, 'success');
     } catch (e) {
-        showToast('Ошибка вставки', 'error');
+        if (e.name === 'NotAllowedError') {
+            showClipboardPermissionModal();
+        } else {
+            showToast('В буфере нет скопированного предмета', 'info');
+        }
+    }
+}
+
+async function copyContainer() {
+    if (!localItems || localItems.length === 0) {
+        showToast('Контейнер пуст', 'error');
+        return;
+    }
+    
+    // Проверяем/запрашиваем разрешение
+    if (!clipboardPermissionGranted) {
+        const granted = await requestClipboardPermission();
+        if (!granted) {
+            showClipboardPermissionModal();
+            return;
+        }
+    }
+    
+    const containerData = {
+        name: CONTAINER_NAME,
+        items: JSON.parse(JSON.stringify(localItems)),
+        copiedAt: Date.now()
+    };
+    
+    // Копируем в реальный буфер обмена как текст с префиксом
+    const clipboardText = CONTAINER_CLIPBOARD_PREFIX + JSON.stringify(containerData);
+    
+    try {
+        await navigator.clipboard.writeText(clipboardText);
+        showToast(`Скопировано ${localItems.length} предметов. Откройте другой контейнер и нажмите Ctrl+V`, 'success');
+    } catch (e) {
+        showToast('Ошибка копирования', 'error');
+    }
+}
+
+function showClipboardPermissionModal() {
+    // Удаляем старое окно если есть
+    document.getElementById('clipboardPermissionModal')?.remove();
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'clipboardPermissionModal';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = `
+        <div class="modal-content modal-small" onclick="event.stopPropagation()">
+            <div class="permission-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2"/>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                </svg>
+            </div>
+            <h3>Требуется разрешение</h3>
+            <p>Для копирования контейнера нужен доступ к буферу обмена.</p>
+            <div class="permission-steps">
+                <div class="permission-step">
+                    <span class="step-num">1</span>
+                    <span>Нажмите на иконку <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> слева от адресной строки</span>
+                </div>
+                <div class="permission-step">
+                    <span class="step-num">2</span>
+                    <span>Найдите "Буфер обмена" и выберите "Разрешить"</span>
+                </div>
+                <div class="permission-step">
+                    <span class="step-num">3</span>
+                    <span>Обновите страницу</span>
+                </div>
+            </div>
+            <div class="permission-modal-actions">
+                <button class="btn" onclick="this.closest('.modal').remove()">Понятно</button>
+                <button class="btn btn-primary" onclick="location.reload()">Обновить страницу</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function pasteContainer() {
+    try {
+        const clipboardText = await navigator.clipboard.readText();
+        
+        // Проверяем что это наши данные - контейнер
+        if (clipboardText && clipboardText.startsWith(CONTAINER_CLIPBOARD_PREFIX)) {
+            const jsonStr = clipboardText.slice(CONTAINER_CLIPBOARD_PREFIX.length);
+            const containerData = JSON.parse(jsonStr);
+            
+            if (!containerData.items || containerData.items.length === 0) {
+                showToast('Скопированный контейнер пуст', 'error');
+                return;
+            }
+            
+            // Добавляем все предметы
+            containerData.items.forEach(item => {
+                localItems.push(JSON.parse(JSON.stringify(item)));
+            });
+            
+            hasChanges = true;
+            renderItems();
+            hideClipboardBanner();
+            
+            // Очищаем буфер после вставки
+            await navigator.clipboard.writeText('');
+            
+            showToast(`Вставлено ${containerData.items.length} предметов из "${containerData.name}"`, 'success');
+            return;
+        }
+        
+        // Проверяем на предмет
+        if (clipboardText && clipboardText.startsWith(ITEM_CLIPBOARD_PREFIX)) {
+            const jsonStr = clipboardText.slice(ITEM_CLIPBOARD_PREFIX.length);
+            const item = JSON.parse(jsonStr);
+            
+            localItems.push(JSON.parse(JSON.stringify(item)));
+            hasChanges = true;
+            renderItems();
+            
+            showToast(`Вставлено: ${getItemDisplayName(item.shortname)}`, 'success');
+            return;
+        }
+        
+        showToast('В буфере нет скопированных данных', 'info');
+    } catch (e) {
+        // Если нет разрешения - показываем модалку
+        if (e.name === 'NotAllowedError') {
+            showClipboardPermissionModal();
+        } else {
+            showToast('В буфере нет скопированных данных', 'info');
+        }
+    }
+}
+
+function showClipboardBanner(containerData) {
+    // Не показываем баннер в том же контейнере откуда скопировали
+    if (containerData.name === CONTAINER_NAME) return;
+    
+    // Удаляем старый баннер если есть
+    hideClipboardBanner();
+    
+    const banner = document.createElement('div');
+    banner.className = 'clipboard-banner';
+    banner.id = 'clipboardBanner';
+    banner.innerHTML = `
+        <div class="clipboard-banner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+            </svg>
+        </div>
+        <div class="clipboard-banner-content">
+            <span class="clipboard-banner-title">Доступна вставка</span>
+            <span class="clipboard-banner-info">"${containerData.name}" • ${containerData.items.length} предметов</span>
+        </div>
+        <div class="clipboard-banner-hint">
+            <kbd>Ctrl</kbd> + <kbd>V</kbd> для вставки
+        </div>
+        <button class="clipboard-banner-close" onclick="hideClipboardBanner()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    `;
+    
+    document.body.appendChild(banner);
+    
+    // Анимация появления
+    requestAnimationFrame(() => banner.classList.add('active'));
+}
+
+function hideClipboardBanner() {
+    const banner = document.getElementById('clipboardBanner');
+    if (banner) {
+        banner.classList.remove('active');
+        setTimeout(() => banner.remove(), 300);
     }
 }
 
 // Проверить буфер при загрузке
-function checkClipboard() {
-    const clipboardData = localStorage.getItem(CLIPBOARD_KEY);
-    const pasteBtn = document.getElementById('pasteBtn');
-    if (pasteBtn && clipboardData) {
-        pasteBtn.style.display = 'flex';
+async function checkClipboard() {
+    // Проверяем реальный буфер обмена (только если есть разрешение)
+    try {
+        const result = await navigator.permissions.query({ name: 'clipboard-read' });
+        if (result.state === 'granted') {
+            clipboardPermissionGranted = true;
+            const clipboardText = await navigator.clipboard.readText();
+            
+            // Проверяем на контейнер
+            if (clipboardText && clipboardText.startsWith(CONTAINER_CLIPBOARD_PREFIX)) {
+                const jsonStr = clipboardText.slice(CONTAINER_CLIPBOARD_PREFIX.length);
+                const containerData = JSON.parse(jsonStr);
+                // Показываем баннер только в ДРУГОМ контейнере
+                if (containerData.name !== CONTAINER_NAME) {
+                    showClipboardBanner(containerData);
+                }
+            }
+            
+            // Проверяем на предмет - показываем кнопку вставки
+            if (clipboardText && clipboardText.startsWith(ITEM_CLIPBOARD_PREFIX)) {
+                const pasteBtn = document.getElementById('pasteBtn');
+                if (pasteBtn) pasteBtn.style.display = 'flex';
+            }
+        }
+    } catch (e) {
+        // Нет доступа к буферу - ничего не делаем
     }
 }
 
@@ -1051,8 +1333,12 @@ function openAmmoModal(index) {
     const currentCount = item.ammo?.amount || item.ammoAmount || WEAPON_MAG_SIZE[item.shortname] || 0;
     const maxAmmo = WEAPON_MAG_SIZE[item.shortname] || 30;
     
-    let optionsHtml = ammoList.map(a => 
-        `<option value="${a.shortname}" ${a.shortname === currentAmmo ? 'selected' : ''}>${a.name}</option>`
+    // Кастомный список патронов с иконками
+    let ammoItemsHtml = ammoList.map(a => 
+        `<div class="ammo-picker-item ${a.shortname === currentAmmo ? 'selected' : ''}" data-shortname="${a.shortname}" onclick="selectAmmoType('${a.shortname}')">
+            <img src="/icons/${encodeURIComponent(a.shortname)}.png" onerror="this.style.display='none'">
+            <span>${a.name}</span>
+        </div>`
     ).join('');
     
     const modal = document.createElement('div');
@@ -1072,31 +1358,38 @@ function openAmmoModal(index) {
             <div class="ammo-modal-body">
                 <div class="ammo-field">
                     <label>Тип патронов</label>
-                    <select id="ammoTypeSelect">${optionsHtml}</select>
+                    <div class="ammo-picker-grid" id="ammoPickerGrid">
+                        ${ammoItemsHtml}
+                    </div>
+                    <input type="hidden" id="ammoTypeSelect" value="${currentAmmo}">
                 </div>
                 <div class="ammo-field">
                     <label>Количество (макс: ${maxAmmo})</label>
                     <input type="number" id="ammoCountInput" value="${currentCount}" min="0" max="${maxAmmo}">
                 </div>
-                <div class="ammo-preview">
-                    <img id="ammoPreviewIcon" src="/icons/${encodeURIComponent(currentAmmo)}.png">
-                    <span id="ammoPreviewName">${ammoList.find(a => a.shortname === currentAmmo)?.name || ''}</span>
-                </div>
             </div>
             <div class="ammo-modal-footer">
-                <button class="btn btn-secondary" onclick="this.closest('.ammo-modal').remove()">Отмена</button>
-                <button class="btn" onclick="saveAmmoSelection(${index})">Сохранить</button>
+                <button class="btn" onclick="this.closest('.ammo-modal').remove()">Отмена</button>
+                <button class="btn btn-primary" onclick="saveAmmoSelection(${index})">Сохранить</button>
             </div>
         </div>
     `;
     
-    document.body.appendChild(modal);
+    // Закрытие по клику на backdrop (пустое место)
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
     
-    // Обновление превью при смене типа
-    document.getElementById('ammoTypeSelect').addEventListener('change', function() {
-        const selected = ammoList.find(a => a.shortname === this.value);
-        document.getElementById('ammoPreviewIcon').src = `/icons/${encodeURIComponent(this.value)}.png`;
-        document.getElementById('ammoPreviewName').textContent = selected?.name || '';
+    document.body.appendChild(modal);
+}
+
+// Выбрать тип патронов
+function selectAmmoType(shortname) {
+    document.getElementById('ammoTypeSelect').value = shortname;
+    document.querySelectorAll('.ammo-picker-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.shortname === shortname);
     });
 }
 
@@ -1492,10 +1785,25 @@ document.addEventListener('click', (e) => {
 
 // ============ HOTKEYS ============
 function handleHotkeys(e) {
-    // Ctrl+S - сохранить
-    if (e.ctrlKey && e.key === 's') {
+    // Игнорируем если фокус в input/textarea
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    // Ctrl+S - сохранить (работает с любой раскладкой)
+    if (e.ctrlKey && (e.code === 'KeyS')) {
         e.preventDefault();
         saveToServer();
+    }
+    
+    // Ctrl+C - копировать контейнер (работает с любой раскладкой)
+    if (e.ctrlKey && (e.code === 'KeyC') && !window.getSelection().toString()) {
+        e.preventDefault();
+        copyContainer();
+    }
+    
+    // Ctrl+V - вставить контейнер (работает с любой раскладкой)
+    if (e.ctrlKey && (e.code === 'KeyV')) {
+        e.preventDefault();
+        pasteContainer();
     }
     
     // Ctrl+/ - поиск по таблице
