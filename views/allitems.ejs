@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title>Поиск предметов - Loot Editor</title>
+</head>
+<body>
+    <div class="app-wrapper">
+        <%- include('partials/sidebar', { containers, currentContainer, rustContainers }) %>
+        
+        <div class="main">
+            <div class="header">
+                <h1>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    Глобальный поиск предметов
+                </h1>
+            </div>
+            
+            <div class="search-section">
+                <div class="search-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="globalSearch" placeholder="Введите название или shortname предмета..." autofocus>
+                    <span class="search-hint">Найдено: <span id="resultsCount">0</span></span>
+                </div>
+                
+                <div class="filter-row">
+                    <div class="category-filter-wrapper">
+                        <select id="categoryFilter" style="display:none;">
+                            <option value="">Все категории</option>
+                            <% categories.forEach(cat => { %>
+                                <option value="<%= cat %>"><%= cat %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="items-results" id="itemsResults">
+                <div class="no-results">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21l-4.35-4.35"></path>
+                    </svg>
+                    <p>Начните вводить название предмета для поиска</p>
+                </div>
+            </div>
+            
+            <%- include('partials/footer') %>
+        </div>
+    </div>
+
+    <%- include('partials/modals') %>
+
+    <script>
+        const CONTAINER_NAME = null;
+        const ALL_ITEMS = <%- JSON.stringify(items) %>;
+        const RUST_CONTAINERS = <%- JSON.stringify(rustContainers) %>;
+        const EXISTING_CONTAINERS = <%- JSON.stringify(containers) %>;
+    </script>
+    <script src="/js/app.js"></script>
+    <script src="/js/allitems.js"></script>
+</body>
+</html>

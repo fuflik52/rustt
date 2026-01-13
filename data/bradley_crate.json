@@ -1,0 +1,71 @@
+{
+  "enabled": true,
+  "amountLoot": {
+    "minAmount": 3,
+    "maxAmount": 4
+  },
+  "lootPresets": [
+    {
+      "shortname": "ammo.rocket.basic",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 7,
+        "maxAmount": 12
+      }
+    },
+    {
+      "shortname": "metal.refined",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 120,
+        "maxAmount": 150
+      }
+    },
+    {
+      "shortname": "explosive.timed",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 7,
+        "maxAmount": 10
+      }
+    },
+    {
+      "shortname": "lmg.m249",
+      "displayName": "",
+      "rareDrop": 15,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "ammoType": "ammo.rifle.incendiary",
+      "ammo": 123
+    },
+    {
+      "shortname": "rocket.launcher",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    },
+    {
+      "shortname": "rifle.ak",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    }
+  ]
+}

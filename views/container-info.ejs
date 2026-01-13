@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title><%= currentContainer %> - Статистика</title>
+</head>
+<body>
+    <div class="app-wrapper">
+        <%- include('partials/sidebar', { containers, currentContainer, rustContainers }) %>
+        
+        <div class="main">
+            <div class="header">
+                <div class="header-title-row">
+                    <a href="/container/<%= currentContainer %>" class="back-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    </a>
+                    <h1><%= currentContainer %></h1>
+                    <span class="page-badge">Статистика</span>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="info-stats-grid">
+                <div class="info-stat-card">
+                    <div class="info-stat-icon blue">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                    </div>
+                    <div class="info-stat-data">
+                        <span class="info-stat-value" id="statTotal">0</span>
+                        <span class="info-stat-label">Всего предметов</span>
+                    </div>
+                </div>
+                <div class="info-stat-card">
+                    <div class="info-stat-icon green">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg>
+                    </div>
+                    <div class="info-stat-data">
+                        <span class="info-stat-value" id="statAvgChance">0%</span>
+                        <span class="info-stat-label">Средний шанс</span>
+                    </div>
+                </div>
+                <div class="info-stat-card">
+                    <div class="info-stat-icon purple">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <div class="info-stat-data">
+                        <span class="info-stat-value" id="statBlueprints">0</span>
+                        <span class="info-stat-label">Чертежей</span>
+                    </div>
+                </div>
+                <div class="info-stat-card">
+                    <div class="info-stat-icon orange">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    </div>
+                    <div class="info-stat-data">
+                        <span class="info-stat-value" id="statWithMods">0</span>
+                        <span class="info-stat-label">С модулями</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loot Generator -->
+            <div class="info-section">
+                <div class="info-section-header">
+                    <h2>Генератор дропа</h2>
+                    <button class="btn-simulate-large" onclick="simulateLoot()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                        Бросить
+                    </button>
+                </div>
+                <div class="simulation-result" id="simulationResult">
+                    <div class="simulation-empty">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                        <p>Нажмите "Бросить" для генерации лута</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Categories Distribution -->
+            <div class="info-section">
+                <div class="info-section-header">
+                    <h2>Распределение по категориям</h2>
+                </div>
+                <div class="categories-distribution" id="categoriesDistribution"></div>
+            </div>
+            
+            <!-- All Items by Category -->
+            <div class="info-section">
+                <div class="info-section-header">
+                    <h2>Все предметы</h2>
+                    <span class="items-count" id="itemsCountBadge">0 предметов</span>
+                </div>
+                <div class="items-by-category" id="itemsByCategory"></div>
+            </div>
+            
+            <%- include('partials/footer') %>
+        </div>
+    </div>
+    
+    <script>
+        const CONTAINER_NAME = '<%= currentContainer %>';
+        const CONTAINER_DATA = <%- JSON.stringify(containerData) %>;
+        const ALL_ITEMS = <%- JSON.stringify(items) %>;
+    </script>
+    <script src="/js/info.js"></script>
+</body>
+</html>

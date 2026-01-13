@@ -1,0 +1,270 @@
+<!-- Container Picker Modal -->
+<div class="modal" id="containerPickerModal" onclick="closeOnBackdrop(event, closeContainerPicker)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Выберите контейнер</h2>
+            <input type="text" id="containerSearch" placeholder="Поиск..." oninput="filterContainers()">
+            <button class="close-btn" onclick="closeContainerPicker()">✕</button>
+        </div>
+        <div class="container-picker-grid" id="containerPickerGrid"></div>
+    </div>
+</div>
+
+<!-- Presets Modal -->
+<div class="modal" id="presetsModal" onclick="closeOnBackdrop(event, closePresetsModal)">
+    <div class="modal-content modal-presets" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Быстрые наборы</h2>
+            <button class="close-btn" onclick="closePresetsModal()">✕</button>
+        </div>
+        <div class="presets-layout">
+            <div class="presets-preview-panel" id="presetsPreviewPanel">
+                <div class="preview-empty" id="previewEmpty">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <p>Наведите на набор для просмотра</p>
+                </div>
+                <div class="preview-content" id="previewContent">
+                    <div class="preview-header">
+                        <span id="previewTitle">Предметы</span>
+                        <span id="previewCount">0 шт.</span>
+                    </div>
+                    <div class="preview-items" id="previewItems"></div>
+                </div>
+            </div>
+            <div class="presets-list-panel">
+                <div class="preset-item" onmouseenter="showPresetPreview('Weapon')" onclick="addPreset('Weapon')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 22H18a2 2 0 002-2V7.5L14.5 2H6a2 2 0 00-2 2v4"/><path d="M2.97 13.12c-.54.54-.54 1.42 0 1.96l5.95 5.95c.54.54 1.42.54 1.96 0l6.24-6.24c.54-.54.54-1.42 0-1.96l-5.95-5.95a1.39 1.39 0 00-1.96 0l-6.24 6.24z"/></svg>
+                    <span>Оружие</span>
+                    <small class="preset-count" data-category="Weapon"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Ammunition')" onclick="addPreset('Ammunition')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Патроны</span>
+                    <small class="preset-count" data-category="Ammunition"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Resources')" onclick="addPreset('Resources')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                    <span>Ресурсы</span>
+                    <small class="preset-count" data-category="Resources"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Component')" onclick="addPreset('Component')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    <span>Компоненты</span>
+                    <small class="preset-count" data-category="Component"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Attire')" onclick="addPreset('Attire')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/></svg>
+                    <span>Одежда и броня</span>
+                    <small class="preset-count" data-category="Attire"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Medical')" onclick="addPreset('Medical')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    <span>Медицина</span>
+                    <small class="preset-count" data-category="Medical"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Tool')" onclick="addPreset('Tool')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+                    <span>Инструменты</span>
+                    <small class="preset-count" data-category="Tool"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Food')" onclick="addPreset('Food')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+                    <span>Еда</span>
+                    <small class="preset-count" data-category="Food"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Electrical')" onclick="addPreset('Electrical')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/></svg>
+                    <span>Электричество</span>
+                    <small class="preset-count" data-category="Electrical"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Traps')" onclick="addPreset('Traps')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+                    <span>Ловушки</span>
+                    <small class="preset-count" data-category="Traps"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Construction')" onclick="addPreset('Construction')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Постройки</span>
+                    <small class="preset-count" data-category="Construction"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Items')" onclick="addPreset('Items')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+                    <span>Предметы</span>
+                    <small class="preset-count" data-category="Items"></small>
+                </div>
+                <div class="preset-item" onmouseenter="showPresetPreview('Fun')" onclick="addPreset('Fun')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    <span>Развлечения</span>
+                    <small class="preset-count" data-category="Fun"></small>
+                </div>
+                <div class="preset-item preset-item-danger" onclick="clearAllItems()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    <span>Очистить всё</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Item Picker Modal -->
+<div class="modal" id="itemPickerModal" onclick="closeOnBackdrop(event, closeItemPicker)">
+    <div class="modal-content modal-picker" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Выберите предметы</h2>
+            <input type="text" id="itemSearch" placeholder="Поиск..." oninput="filterItems()">
+            <button class="close-btn" onclick="closeItemPicker()">✕</button>
+        </div>
+        <div class="categories-wrapper">
+            <button class="categories-scroll-btn" onclick="scrollCategories(-1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="item-categories" id="itemCategories"></div>
+            <button class="categories-scroll-btn" onclick="scrollCategories(1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+        </div>
+        <div class="item-picker-grid" id="itemPickerGrid"></div>
+        <div class="picker-footer" id="pickerFooter">
+            <div class="picker-selection-info">
+                <span id="selectionCount">0 выбрано</span>
+                <button class="btn-clear-selection" onclick="clearPickerSelection()">Сбросить</button>
+            </div>
+            <button class="btn btn-primary" onclick="addSelectedItems()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Добавить
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Input (hidden) -->
+<input type="file" id="importInput" accept=".json" multiple style="display:none" onchange="handleImport(event)">
+
+<!-- Item Edit Modal -->
+<div class="modal" id="itemEditModal" onclick="closeOnBackdrop(event, closeItemEdit)">
+    <div class="modal-content modal-edit" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="edit-item-header">
+                <div class="edit-item-icon-wrap">
+                    <img id="editItemIcon" src="">
+                </div>
+                <div class="edit-item-info">
+                    <h2 id="editItemName">Редактирование</h2>
+                    <div class="edit-item-shortname-row">
+                        <span id="editItemShortname"></span>
+                        <button class="copy-shortname-btn" id="copyShortname" title="Копировать shortname">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        </button>
+                    </div>
+                    <div class="edit-item-slots" id="editItemSlots"></div>
+                </div>
+            </div>
+            <button class="close-btn" onclick="closeItemEdit()">✕</button>
+        </div>
+        <div class="edit-content">
+            <div class="edit-section">
+                <div class="edit-row">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                        <label>Чертёж</label>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="editIsBlueprint" onchange="updateEditField('isBlueprint', this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="edit-hint">Вместо предмета выпадет чертёж</span>
+                </div>
+                <div class="edit-row">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="9" r="2"/><path d="M4 19l5-5"/><circle cx="17" cy="17" r="2"/></svg>
+                        <label>Шанс %</label>
+                    </div>
+                    <input type="number" id="editRareDrop" class="edit-input" min="1" max="100" onchange="updateEditField('rareDrop', this.value)">
+                </div>
+                <div class="edit-row">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+                        <label>Количество</label>
+                    </div>
+                    <div class="edit-range">
+                        <input type="number" id="editMinAmount" class="edit-input" min="1" placeholder="Мин" onchange="updateEditField('minAmount', this.value)">
+                        <span>—</span>
+                        <input type="number" id="editMaxAmount" class="edit-input" min="1" placeholder="Макс" onchange="updateEditField('maxAmount', this.value)">
+                    </div>
+                </div>
+                <div class="edit-row">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                        <label>Skin ID</label>
+                    </div>
+                    <input type="number" id="editSkinID" class="edit-input" min="0" onchange="updateEditField('skinID', this.value)">
+                </div>
+                <div class="edit-row" id="conditionRow">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
+                        <label>Прочность</label>
+                    </div>
+                    <div class="edit-range">
+                        <input type="number" id="editCondition" class="edit-input" min="0" max="100" placeholder="%" onchange="updateEditField('condition', this.value)">
+                        <span class="edit-hint">0-100% (пусто = 100%)</span>
+                    </div>
+                </div>
+                <div class="edit-row" id="ammoRow" style="display:none">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                        <label>Патроны</label>
+                    </div>
+                    <div class="edit-range">
+                        <input type="number" id="editAmmo" class="edit-input" min="0" placeholder="Кол-во" onchange="updateEditField('ammo', this.value)">
+                        <span class="edit-hint">пусто = полный магазин</span>
+                    </div>
+                </div>
+                <div class="edit-row" id="ammoTypeRow" style="display:none">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M9 9h6v6H9z"/></svg>
+                        <label>Тип патронов</label>
+                    </div>
+                    <div class="ammo-picker" id="ammoPicker" onclick="toggleAmmoPicker()">
+                        <img id="ammoPickerIcon" src="" style="display:none">
+                        <span id="ammoPickerText">Стандартные</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                    <div class="ammo-dropdown" id="ammoDropdown"></div>
+                </div>
+                <div class="edit-row">
+                    <div class="edit-label">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        <label>Название</label>
+                    </div>
+                    <input type="text" id="editDisplayName" class="edit-input edit-input-wide" placeholder="Кастомное название" onchange="updateEditField('displayName', this.value)">
+                </div>
+            </div>
+            
+            <div class="edit-section edit-attachments" id="attachmentsSection" style="display:none">
+                <div class="edit-section-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    <span>Модули оружия</span>
+                </div>
+                <div class="attachments-list" id="attachmentsList"></div>
+            </div>
+        </div>
+        <div class="edit-footer">
+            <button class="btn btn-danger" onclick="deleteEditItem()">Удалить</button>
+            <button class="btn btn-primary" onclick="closeItemEdit()">Готово</button>
+        </div>
+    </div>
+</div>
+
+<!-- Attachment Picker Modal -->
+<div class="modal" id="attachmentPickerModal" onclick="closeOnBackdrop(event, closeAttachmentPicker)">
+    <div class="modal-content modal-small" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Выберите модуль</h2>
+            <button class="close-btn" onclick="closeAttachmentPicker()">✕</button>
+        </div>
+        <div class="attachment-picker-grid" id="attachmentPickerGrid"></div>
+    </div>
+</div>

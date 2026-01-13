@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title><%= currentContainer %> - Loot Editor</title>
+</head>
+<body>
+    <div class="app-wrapper">
+        <%- include('partials/sidebar', { containers, currentContainer, rustContainers }) %>
+        
+        <div class="main">
+        <div class="header">
+            <div class="container-header-info">
+                <% const containerInfo = rustContainers.find(c => c.shortname === currentContainer) || {}; %>
+                <div class="container-header-thumb">
+                    <% if (containerInfo.image) { %>
+                        <img src="<%= containerInfo.image %>" alt="<%= currentContainer %>">
+                    <% } else { %>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        </svg>
+                    <% } %>
+                </div>
+                <div class="container-header-text">
+                    <h1><%= currentContainer %></h1>
+                    <button class="container-spawn-cmd" onclick="copyCommand()" title="Копировать команду">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        <span>spawn <%= currentContainer %></span>
+                    </button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="header-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input type="text" id="headerSearchInput" placeholder="Поиск..." oninput="filterLootTable()">
+                    <span class="header-search-count" id="headerSearchCount"></span>
+                </div>
+                <% if (containerData.lootPresets && containerData.lootPresets.length > 10) { %>
+                <a href="/container/<%= currentContainer %>/info" class="btn btn-info-link" title="Статистика">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+                    Инфо
+                </a>
+                <% } %>
+                <button class="btn" onclick="openPresetsModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Наборы
+                </button>
+                <button class="btn" onclick="saveAll()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Сохранить
+                </button>
+                <button class="btn" onclick="exportJson()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Скачать
+                </button>
+                <button class="btn" onclick="openImport()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Загрузить
+                </button>
+            </div>
+        </div>
+        
+        <div class="settings-panel" id="containerSettings">
+            <div class="settings-group">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="containerEnabled" <%= containerData.enabled ? 'checked' : '' %> onchange="updateSettings()">
+                    <span class="toggle-track"></span>
+                    <span class="toggle-text">Включен</span>
+                </label>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="settings-group">
+                <span class="settings-label">Количество лута</span>
+                <div class="range-inputs">
+                    <div class="range-input">
+                        <span>от</span>
+                        <input type="number" id="minLoot" value="<%= containerData.amountLoot?.minAmount || 1 %>" min="1" max="<%= currentContainer === 'supply_drop' ? 24 : 6 %>" onchange="updateSettings()">
+                    </div>
+                    <div class="range-input">
+                        <span>до</span>
+                        <input type="number" id="maxLoot" value="<%= containerData.amountLoot?.maxAmount || (currentContainer === 'supply_drop' ? 6 : 3) %>" min="1" max="<%= currentContainer === 'supply_drop' ? 24 : 6 %>" onchange="updateSettings()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="loot-table" id="lootTable">
+        <script>document.getElementById('lootTable').classList.add('view-' + (localStorage.getItem('lootEditorViewMode') || 'rows'));</script>
+            <% if (containerData.lootPresets && containerData.lootPresets.length > 0) { %>
+            <div class="loot-header" id="lootHeader">
+                <span>Предмет</span>
+                <span>Шанс %</span>
+                <span>Мин</span>
+                <span>Макс</span>
+                <span>Skin ID</span>
+                <span></span>
+            </div>
+            <div id="lootRows">
+                <% containerData.lootPresets.forEach(function(item, index) { %>
+                    <div class="loot-row" data-index="<%= index %>">
+                        <div class="loot-identity" onclick="openItemEdit(<%= index %>)" style="cursor:pointer">
+                            <span class="loot-num"><%= index + 1 %></span>
+                            <img src="/icons/<%= encodeURIComponent(item.shortname) %>.png" onerror="this.style.display='none'">
+                            <span class="item-name"><%= getItemName(item.shortname) %></span>
+                            <% if (item.attachments && item.attachments.length > 0) { %>
+                            <div class="item-slots">
+                                <% item.attachments.slice(0, 4).forEach(function(att) { %>
+                                <div class="item-slot filled" title="<%= att %>"><img src="/icons/<%= encodeURIComponent(att) %>.png"></div>
+                                <% }); %>
+                                <% for (let i = item.attachments.length; i < 4; i++) { %>
+                                <div class="item-slot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                                <% } %>
+                            </div>
+                            <% } else if (item.isBlueprint) { %>
+                            <div class="item-slots">
+                                <div class="item-slot filled" onclick="event.stopPropagation(); toggleBlueprint(<%= index %>)" title="Убрать чертёж"><img src="/icons/blueprintbase.png"></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                            </div>
+                            <% } else { %>
+                            <div class="item-slots">
+                                <div class="item-slot" onclick="event.stopPropagation(); toggleBlueprint(<%= index %>)" title="Добавить чертёж"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                            </div>
+                            <% } %>
+                        </div>
+                        <input type="number" class="loot-input" value="<%= item.rareDrop || 100 %>" min="1" max="100" onchange="updateItem(<%= index %>, 'rareDrop', this.value)">
+                        <input type="number" class="loot-input" value="<%= item.amount?.minAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'minAmount', this.value)">
+                        <input type="number" class="loot-input" value="<%= item.amount?.maxAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'maxAmount', this.value)">
+                        <input type="number" class="loot-input loot-skin" value="<%= item.skinID || 0 %>" min="0" placeholder="Skin" onchange="updateItem(<%= index %>, 'skinID', this.value)">
+                        <div class="card-inputs">
+                            <div class="card-input-group">
+                                <span class="card-input-label">Шанс</span>
+                                <input type="number" class="loot-input" value="<%= item.rareDrop || 100 %>" min="1" max="100" onchange="updateItem(<%= index %>, 'rareDrop', this.value)">
+                            </div>
+                            <div class="card-input-group">
+                                <span class="card-input-label">Мин</span>
+                                <input type="number" class="loot-input" value="<%= item.amount?.minAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'minAmount', this.value)">
+                            </div>
+                            <div class="card-input-group">
+                                <span class="card-input-label">Макс</span>
+                                <input type="number" class="loot-input" value="<%= item.amount?.maxAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'maxAmount', this.value)">
+                            </div>
+                            <div class="card-input-group">
+                                <span class="card-input-label">Скин</span>
+                                <input type="number" class="loot-input" value="<%= item.skinID || 0 %>" min="0" onchange="updateItem(<%= index %>, 'skinID', this.value)">
+                            </div>
+                        </div>
+                        <button class="loot-delete" onclick="removeItem(<%= index %>)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        </button>
+                    </div>
+                <% }); %>
+            </div>
+            <div class="add-item-row" onclick="openItemPicker()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Добавить предмет
+            </div>
+            <% } else { %>
+            <!-- Empty State -->
+            <div class="empty-loot-state" id="emptyState">
+                <div class="empty-loot-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <h3 class="empty-loot-title">Контейнер пуст</h3>
+                <p class="empty-loot-text">Добавьте предметы, нажав на карточку ниже</p>
+                
+                <div class="empty-loot-cards">
+                    <div class="empty-loot-card" onclick="openItemPicker()">
+                        <div class="empty-card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <span>Добавить</span>
+                    </div>
+                    <div class="empty-loot-card" onclick="openItemPicker()">
+                        <div class="empty-card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <span>Добавить</span>
+                    </div>
+                    <div class="empty-loot-card" onclick="openItemPicker()">
+                        <div class="empty-card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <span>Добавить</span>
+                    </div>
+                    <div class="empty-loot-card" onclick="openItemPicker()">
+                        <div class="empty-card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <span>Добавить</span>
+                    </div>
+                    <div class="empty-loot-card" onclick="openItemPicker()">
+                        <div class="empty-card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <span>Добавить</span>
+                    </div>
+                    <div class="empty-loot-card" onclick="openItemPicker()">
+                        <div class="empty-card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <span>Добавить</span>
+                    </div>
+                </div>
+                
+                <p class="empty-loot-hint">
+                    Или используйте 
+                    <button class="empty-loot-link" onclick="openPresetsModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        готовые наборы
+                    </button>
+                </p>
+            </div>
+            <div class="loot-header" id="lootHeader" style="display:none">
+                <span>Предмет</span>
+                <span>Шанс %</span>
+                <span>Мин</span>
+                <span>Макс</span>
+                <span>Skin ID</span>
+                <span></span>
+            </div>
+            <div id="lootRows"></div>
+            <% } %>
+        </div>
+        <%- include('partials/footer') %>
+    </div>
+    </div>
+    
+    <%- include('partials/modals') %>
+    
+    <script>
+        const CONTAINER_NAME = '<%= currentContainer %>';
+        const CONTAINER_DATA = <%- JSON.stringify(containerData) %>;
+        const ALL_ITEMS = <%- JSON.stringify(items) %>;
+        const RUST_CONTAINERS = <%- JSON.stringify(rustContainers) %>;
+        const EXISTING_CONTAINERS = <%- JSON.stringify(containers) %>;
+    </script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

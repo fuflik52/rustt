@@ -1,0 +1,1380 @@
+// ============ LOCAL STATE ============
+let localItems = [];
+let hasChanges = false;
+let autoSaveInterval = null;
+
+function initLocalState() {
+    if (typeof CONTAINER_DATA !== 'undefined' && CONTAINER_DATA.lootPresets) {
+        localItems = JSON.parse(JSON.stringify(CONTAINER_DATA.lootPresets));
+    }
+    
+    // Перерисовать с правильными слотами (оружие vs обычные предметы)
+    renderItems();
+    
+    // Автосохранение каждую минуту
+    autoSaveInterval = setInterval(() => {
+        if (hasChanges) saveToServer();
+    }, 60000);
+    
+    // Автосохранение при уходе со страницы (без диалога)
+    window.addEventListener('beforeunload', () => {
+        if (hasChanges) {
+            // Синхронный запрос для гарантированного сохранения
+            navigator.sendBeacon(`/api/container/${encodeURIComponent(CONTAINER_NAME)}/items/bulk`, 
+                new Blob([JSON.stringify({ items: localItems })], { type: 'application/json' }));
+        }
+    });
+    
+    // Перехватываем клики по ссылкам для сохранения перед переходом
+    document.addEventListener('click', async (e) => {
+        const link = e.target.closest('a[href]');
+        if (link && hasChanges && !link.href.includes('#')) {
+            e.preventDefault();
+            await saveToServer();
+            window.location.href = link.href;
+        }
+    });
+    
+    // Горячие клавиши
+    document.addEventListener('keydown', handleHotkeys);
+}
+
+async function saveToServer() {
+    if (!CONTAINER_NAME || !hasChanges) return;
+    
+    try {
+        await fetch(`/api/container/${encodeURIComponent(CONTAINER_NAME)}/items/bulk`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: localItems })
+        });
+        hasChanges = false;
+        showToast('Сохранено на сервер', 'success');
+    } catch (err) {
+        showToast('Ошибка сохранения', 'error');
+    }
+}
+
+function renderItems() {
+    const container = document.getElementById('lootRows');
+    const emptyState = document.getElementById('emptyState');
+    const lootHeader = document.getElementById('lootHeader');
+    const addItemRow = document.querySelector('.add-item-row');
+    
+    if (!container) return;
+    
+    // Если нет предметов - показываем empty state
+    if (localItems.length === 0) {
+        if (emptyState) emptyState.style.display = '';
+        if (lootHeader) lootHeader.style.display = 'none';
+        if (addItemRow) addItemRow.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+    
+    // Есть предметы - скрываем empty state, показываем header
+    if (emptyState) emptyState.style.display = 'none';
+    if (lootHeader) lootHeader.style.display = '';
+    if (addItemRow) addItemRow.style.display = '';
+    
+    let html = localItems.map((item, index) => {
+        const isWeapon = WEAPONS_WITH_MODS.includes(item.shortname);
+        const attachments = item.attachments || [];
+        
+        let slotsHtml = '';
+        
+        if (isWeapon) {
+            // Для оружия - 4 слота модулей
+            const slotTypes = ['scope', 'muzzle', 'magazine', 'underbarrel'];
+            slotsHtml = '<div class="item-slots">';
+            slotTypes.forEach(slotType => {
+                const slotMods = MOD_SLOTS[slotType]?.mods || [];
+                const installedMod = attachments.find(att => slotMods.some(m => m.shortname === att));
+                
+                if (installedMod) {
+                    slotsHtml += `<div class="item-slot filled" title="${installedMod}"><img src="/icons/${encodeURIComponent(installedMod)}.png"></div>`;
+                } else {
+                    slotsHtml += `<div class="item-slot" onclick="event.stopPropagation(); openItemEdit(${index})" title="${MOD_SLOTS[slotType]?.label || slotType}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>`;
+                }
+            });
+            slotsHtml += '</div>';
+        } else {
+            // Для остальных - 1 слот чертежа + 3 заблокированных
+            const bpSlot = item.isBlueprint 
+                ? `<div class="item-slot filled" onclick="event.stopPropagation(); toggleBlueprint(${index})" title="Убрать чертёж"><img src="/icons/blueprintbase.png"></div>`
+                : `<div class="item-slot" onclick="event.stopPropagation(); toggleBlueprint(${index})" title="Добавить чертёж"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>`;
+            const lockedSlot = `<div class="item-slot locked" title="Заблокировано"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>`;
+            slotsHtml = `<div class="item-slots">${bpSlot}${lockedSlot}${lockedSlot}${lockedSlot}</div>`;
+        }
+        
+        return `
+        <div class="loot-row" data-index="${index}">
+            <div class="loot-identity" onclick="openItemEdit(${index})" style="cursor:pointer">
+                <span class="loot-num">${index + 1}</span>
+                <img src="/icons/${encodeURIComponent(item.shortname)}.png" onerror="this.style.display='none'">
+                <span class="item-name">${getItemDisplayName(item.shortname)}</span>
+                ${slotsHtml}
+            </div>
+            <input type="number" class="loot-input" value="${item.rareDrop || 100}" min="1" max="100" onchange="updateItemLocal(${index}, 'rareDrop', this.value)">
+            <input type="number" class="loot-input" value="${item.amount?.minAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'minAmount', this.value)">
+            <input type="number" class="loot-input" value="${item.amount?.maxAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'maxAmount', this.value)">
+            <input type="number" class="loot-input loot-skin" value="${item.skinID || 0}" min="0" onchange="updateItemLocal(${index}, 'skinID', this.value)">
+            <div class="card-inputs">
+                <div class="card-input-group">
+                    <span class="card-input-label">Шанс</span>
+                    <input type="number" class="loot-input" value="${item.rareDrop || 100}" min="1" max="100" onchange="updateItemLocal(${index}, 'rareDrop', this.value)">
+                </div>
+                <div class="card-input-group">
+                    <span class="card-input-label">Мин</span>
+                    <input type="number" class="loot-input" value="${item.amount?.minAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'minAmount', this.value)">
+                </div>
+                <div class="card-input-group">
+                    <span class="card-input-label">Макс</span>
+                    <input type="number" class="loot-input" value="${item.amount?.maxAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'maxAmount', this.value)">
+                </div>
+                <div class="card-input-group">
+                    <span class="card-input-label">Скин</span>
+                    <input type="number" class="loot-input" value="${item.skinID || 0}" min="0" onchange="updateItemLocal(${index}, 'skinID', this.value)">
+                </div>
+            </div>
+            <button class="loot-delete" onclick="removeItemLocal(${index})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
+        </div>
+    `}).join('');
+    
+    // Добавляем карточки "Добавить предмет" только для режима карточек
+    const lootTable = document.getElementById('lootTable');
+    const isCardsView = lootTable && lootTable.classList.contains('view-cards');
+    
+    if (isCardsView && localItems.length > 0) {
+        // Рассчитываем сколько карточек в строке (примерно 7 при ширине 165px)
+        const itemsPerRow = 7;
+        const itemsInLastRow = localItems.length % itemsPerRow;
+        // Если ряд полный (itemsInLastRow === 0) - добавляем 1 карточку для удобства
+        // Если ряд неполный - добавляем недостающие карточки
+        const emptySlots = itemsInLastRow === 0 ? 1 : itemsPerRow - itemsInLastRow;
+        
+        for (let i = 0; i < emptySlots; i++) {
+            html += `
+                <div class="loot-row add-card" onclick="openItemPicker()">
+                    <div class="add-card-content">
+                        <div class="add-card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="3" stroke-dasharray="4 2"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                        </div>
+                        <span class="add-card-title">Добавить</span>
+                        <span class="add-card-hint">Нажмите для выбора</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    container.innerHTML = html;
+}
+
+function getItemDisplayName(shortname) {
+    if (typeof ALL_ITEMS !== 'undefined') {
+        const item = ALL_ITEMS.find(i => i.shortname === shortname);
+        if (item) return item.name;
+    }
+    return shortname;
+}
+
+function updateItemLocal(index, field, value) {
+    if (index < 0 || index >= localItems.length) return;
+    
+    if (field === 'minAmount' || field === 'maxAmount') {
+        if (!localItems[index].amount) localItems[index].amount = { minAmount: 1, maxAmount: 1 };
+        localItems[index].amount[field] = parseInt(value) || 1;
+    } else if (field === 'skinID') {
+        localItems[index].skinID = parseInt(value) || 0;
+    } else if (field === 'rareDrop') {
+        localItems[index].rareDrop = parseInt(value) || 100;
+    }
+    
+    hasChanges = true;
+}
+
+function toggleBlueprint(index) {
+    if (index < 0 || index >= localItems.length) return;
+    localItems[index].isBlueprint = !localItems[index].isBlueprint;
+    hasChanges = true;
+    renderItems();
+    showToast(localItems[index].isBlueprint ? 'Чертёж добавлен' : 'Чертёж убран', 'success');
+}
+
+function removeItemLocal(index) {
+    if (index < 0 || index >= localItems.length) return;
+    localItems.splice(index, 1);
+    hasChanges = true;
+    renderItems();
+    showToast('Предмет удалён', 'success');
+}
+
+function addItemLocal(shortname) {
+    localItems.push({
+        shortname,
+        displayName: '',
+        rareDrop: 100,
+        isBlueprint: false,
+        amount: { minAmount: 1, maxAmount: 1 },
+        skinID: 0
+    });
+    hasChanges = true;
+    renderItems();
+    showToast('Предмет добавлен', 'success');
+    
+    // Скролл к новому элементу
+    setTimeout(() => {
+        const rows = document.querySelectorAll('.loot-row');
+        if (rows.length > 0) rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+}
+
+// ============ THEME ============
+const THEME_DATA = {
+    light: { name: 'Светлая' },
+    dark: { name: 'Тёмная' },
+    rust: { name: 'Rust' },
+    blood: { name: 'Blood' }
+};
+
+function initTheme() {
+    const saved = localStorage.getItem('lootEditorTheme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    updateThemeDropdown(saved);
+    
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('themeDropdown');
+        if (dropdown && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+}
+
+function toggleThemeDropdown() {
+    const dropdown = document.getElementById('themeDropdown');
+    if (dropdown) dropdown.classList.toggle('open');
+}
+
+function selectTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('lootEditorTheme', theme);
+    updateThemeDropdown(theme);
+    
+    const dropdown = document.getElementById('themeDropdown');
+    if (dropdown) dropdown.classList.remove('open');
+}
+
+function updateThemeDropdown(theme) {
+    const data = THEME_DATA[theme] || THEME_DATA.light;
+    
+    const nameEl = document.getElementById('themeCurrentName');
+    if (nameEl) nameEl.textContent = data.name;
+    
+    // Update active state
+    document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.value === theme);
+    });
+}
+
+function setTheme(theme) {
+    selectTheme(theme);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const themes = ['light', 'dark', 'rust'];
+    const currentIndex = themes.indexOf(current);
+    const next = themes[(currentIndex + 1) % themes.length];
+    selectTheme(next);
+}
+
+function updateThemeSelect() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    updateThemeDropdown(current);
+}
+
+// ============ VIEW MODE ============
+function initViewMode() {
+    const saved = localStorage.getItem('lootEditorViewMode') || 'rows';
+    setViewMode(saved, false);
+}
+
+function setViewMode(mode, save = true) {
+    const lootTable = document.querySelector('.loot-table');
+    const viewToggle = document.getElementById('viewToggle');
+    
+    if (lootTable) {
+        lootTable.classList.remove('view-rows', 'view-cards');
+        lootTable.classList.add(`view-${mode}`);
+    }
+    
+    if (viewToggle) {
+        viewToggle.querySelectorAll('.view-toggle-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === mode);
+        });
+    }
+    
+    if (save) {
+        localStorage.setItem('lootEditorViewMode', mode);
+    }
+    
+    // Перерисовываем предметы для обновления карточек "Добавить"
+    if (typeof localItems !== 'undefined' && localItems.length > 0) {
+        renderItems();
+    }
+}
+
+// ============ TOAST - iOS Style ============
+const toastHistory = new Map(); // Для предотвращения спама
+
+function showToast(message, type = 'info') {
+    // Проверяем, не показывали ли такое же уведомление недавно
+    const key = `${type}:${message}`;
+    const now = Date.now();
+    const lastShown = toastHistory.get(key);
+    
+    if (lastShown && now - lastShown < 2000) {
+        return; // Не показываем если прошло меньше 2 секунд
+    }
+    toastHistory.set(key, now);
+    
+    // Очищаем старые записи
+    if (toastHistory.size > 50) {
+        const oldKeys = [...toastHistory.entries()].filter(([_, time]) => now - time > 10000);
+        oldKeys.forEach(([k]) => toastHistory.delete(k));
+    }
+    
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    // Ограничиваем количество видимых тостов
+    const existingToasts = container.querySelectorAll('.toast:not(.hiding)');
+    if (existingToasts.length >= 3) {
+        existingToasts[0].classList.add('hiding');
+        setTimeout(() => existingToasts[0].remove(), 300);
+    }
+    
+    const icons = {
+        success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        error: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        info: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        warning: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    };
+    
+    const copyIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // Для ошибок добавляем кнопку копирования
+    if (type === 'error') {
+        toast.innerHTML = `
+            <div class="toast-icon">${icons[type]}</div>
+            <span>${message}</span>
+            <button class="toast-copy" title="Копировать">${copyIcon}</button>
+        `;
+        toast.querySelector('.toast-copy').onclick = (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(message).then(() => {
+                toast.querySelector('.toast-copy').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+                setTimeout(() => toast.querySelector('.toast-copy').innerHTML = copyIcon, 1000);
+            });
+        };
+    } else {
+        toast.innerHTML = `<div class="toast-icon">${icons[type] || icons.info}</div><span>${message}</span>`;
+    }
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+
+// ============ CONFIRM DIALOG ============
+function showConfirm(title, message) {
+    // Предотвращаем повторное открытие
+    if (document.querySelector('.confirm-overlay')) return Promise.resolve(false);
+    
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay active';
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <div class="confirm-dialog-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </div>
+                <h3>${title}</h3>
+                <p>${message}</p>
+                <div class="confirm-buttons">
+                    <button class="cancel-btn">Отмена <span class="hotkey-hint">Esc</span></button>
+                    <button class="confirm-btn">Удалить <span class="hotkey-hint">Space</span></button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        const cleanup = () => {
+            document.removeEventListener('keydown', handleKey);
+            overlay.remove();
+        };
+        
+        const handleKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                cleanup();
+                resolve(true);
+            } else if (e.code === 'Escape') {
+                e.preventDefault();
+                cleanup();
+                resolve(false);
+            }
+        };
+        
+        document.addEventListener('keydown', handleKey);
+        overlay.querySelector('.cancel-btn').onclick = () => { cleanup(); resolve(false); };
+        overlay.querySelector('.confirm-btn').onclick = () => { cleanup(); resolve(true); };
+        overlay.onclick = (e) => { if (e.target === overlay) { cleanup(); resolve(false); } };
+    });
+}
+
+function showNavigateConfirm(title, message) {
+    // Предотвращаем повторное открытие
+    if (document.querySelector('.confirm-overlay')) return Promise.resolve(false);
+    
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay active';
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <div class="confirm-dialog-icon" style="background: rgba(59, 130, 246, 0.1);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </div>
+                <h3>${title}</h3>
+                <p>${message}</p>
+                <div class="confirm-buttons">
+                    <button class="cancel-btn">Нет <span class="hotkey-hint">Esc</span></button>
+                    <button class="confirm-btn navigate-btn">Перейти <span class="hotkey-hint">Space</span></button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        const cleanup = () => {
+            document.removeEventListener('keydown', handleKey);
+            overlay.remove();
+        };
+        
+        const handleKey = (e) => {
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+                cleanup();
+                resolve(true);
+            } else if (e.code === 'Escape') {
+                e.preventDefault();
+                cleanup();
+                resolve(false);
+            }
+        };
+        
+        document.addEventListener('keydown', handleKey);
+        overlay.querySelector('.cancel-btn').onclick = () => { cleanup(); resolve(false); };
+        overlay.querySelector('.confirm-btn').onclick = () => { cleanup(); resolve(true); };
+        overlay.onclick = (e) => { if (e.target === overlay) { cleanup(); resolve(false); } };
+    });
+}
+
+function closeOnBackdrop(event, closeFn) {
+    if (event.target === event.currentTarget) closeFn();
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    initViewMode();
+    if (typeof CONTAINER_NAME !== 'undefined' && CONTAINER_NAME) {
+        initLocalState();
+    }
+});
+
+// ============ CONTAINER PICKER ============
+function openContainerPicker() {
+    renderContainerPicker();
+    document.getElementById('containerPickerModal').classList.add('active');
+    document.getElementById('containerSearch').value = '';
+}
+
+function closeContainerPicker() {
+    document.getElementById('containerPickerModal').classList.remove('active');
+}
+
+function renderContainerPicker() {
+    const grid = document.getElementById('containerPickerGrid');
+    const search = document.getElementById('containerSearch').value.toLowerCase();
+    let list = RUST_CONTAINERS || [];
+    const existing = EXISTING_CONTAINERS || [];
+    
+    if (search) list = list.filter(c => c.name.toLowerCase().includes(search) || c.shortname.toLowerCase().includes(search));
+    
+    grid.innerHTML = list.map(c => {
+        const isExisting = existing.includes(c.shortname);
+        const imageHtml = c.image 
+            ? `<img src="${c.image}" alt="${c.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"><div class="container-thumb-fallback" style="display:none"></div>`
+            : `<div class="container-thumb"></div>`;
+        const spawnCmd = c.spawn || `spawn ${c.shortname}`;
+        return `
+            <div class="container-picker-item ${isExisting ? 'exists' : ''}" onclick="addContainerFromPicker('${c.shortname}')">
+                ${isExisting ? '<span class="exists-badge">Создан</span>' : ''}
+                <div class="container-thumb-wrap">${imageHtml}</div>
+                <span class="container-name">${c.name}</span>
+                <span class="container-short">${c.shortname}</span>
+                <button class="copy-spawn-btn" onclick="event.stopPropagation(); copySpawnCmd('${spawnCmd}')" title="Копировать команду спавна">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <span>${spawnCmd}</span>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function copySpawnCmd(cmd) {
+    navigator.clipboard.writeText(cmd).then(() => {
+        showToast('Команда скопирована: ' + cmd, 'success');
+    }).catch(() => {
+        showToast('Ошибка копирования', 'error');
+    });
+}
+
+function filterContainers() { renderContainerPicker(); }
+
+async function addContainerFromPicker(shortname) {
+    const res = await fetch('/api/container', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: shortname })
+    });
+    const data = await res.json();
+    if (data.error === 'exists') {
+        closeContainerPicker();
+        const goTo = await showNavigateConfirm('Контейнер существует', `"${shortname}" уже создан. Перейти к нему?`);
+        if (goTo) window.location.href = `/container/${encodeURIComponent(shortname)}`;
+        return;
+    }
+    closeContainerPicker();
+    showToast('Контейнер создан', 'success');
+    setTimeout(() => window.location.href = `/container/${encodeURIComponent(shortname)}`, 300);
+}
+
+// ============ CONTAINER ACTIONS ============
+async function deleteContainer(name) {
+    const confirmed = await showConfirm('Удалить контейнер?', `<code>${name}</code> будет удалён безвозвратно`);
+    if (!confirmed) return;
+    await fetch(`/api/container/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    showToast('Контейнер удалён', 'success');
+    setTimeout(() => {
+        if (typeof CONTAINER_NAME !== 'undefined' && CONTAINER_NAME === name) window.location.href = '/';
+        else window.location.reload();
+    }, 300);
+}
+
+async function updateSettings() {
+    if (!CONTAINER_NAME) return;
+    await fetch(`/api/container/${encodeURIComponent(CONTAINER_NAME)}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            enabled: document.getElementById('containerEnabled').checked,
+            minAmount: document.getElementById('minLoot').value,
+            maxAmount: document.getElementById('maxLoot').value
+        })
+    });
+    showToast('Настройки сохранены', 'success');
+}
+
+function saveAll() { saveToServer(); }
+
+function copyCommand() {
+    navigator.clipboard.writeText(`spawn ${CONTAINER_NAME}`).then(() => showToast('Команда скопирована', 'success')).catch(() => showToast('Ошибка копирования', 'error'));
+}
+
+// ============ ITEM PICKER ============
+let currentCategory = null;
+let selectedItems = new Set();
+
+function openItemPicker() {
+    currentCategory = null;
+    selectedItems.clear();
+    renderItemPicker();
+    updatePickerFooter();
+    document.getElementById('itemPickerModal').classList.add('active');
+    document.getElementById('itemSearch').value = '';
+    document.getElementById('itemSearch').focus();
+}
+
+function closeItemPicker() { 
+    document.getElementById('itemPickerModal').classList.remove('active');
+    selectedItems.clear();
+}
+
+function renderItemPicker() {
+    const grid = document.getElementById('itemPickerGrid');
+    const categories = document.getElementById('itemCategories');
+    if (!grid || !categories) return;
+    
+    const search = document.getElementById('itemSearch').value.toLowerCase();
+    let items = ALL_ITEMS || [];
+    const cats = [...new Set(items.map(i => i.category))];
+    
+    categories.innerHTML = `<button class="category-btn ${!currentCategory ? 'active' : ''}" onclick="setCategory(null)">Все</button>`;
+    cats.forEach(cat => { if (cat) categories.innerHTML += `<button class="category-btn ${currentCategory === cat ? 'active' : ''}" onclick="setCategory('${cat}')">${cat}</button>`; });
+    
+    if (currentCategory) items = items.filter(i => i.category === currentCategory);
+    if (search) items = items.filter(i => i.name.toLowerCase().includes(search) || i.shortname.toLowerCase().includes(search));
+    
+    grid.innerHTML = items.slice(0, 150).map(item => `
+        <div class="picker-item ${selectedItems.has(item.shortname) ? 'selected' : ''}" onclick="toggleItemSelection('${item.shortname}')">
+            <img src="/icons/${encodeURIComponent(item.shortname)}.png" onerror="this.style.display='none'">
+            <span>${item.name}</span>
+        </div>
+    `).join('');
+}
+
+function toggleItemSelection(shortname) {
+    if (selectedItems.has(shortname)) {
+        selectedItems.delete(shortname);
+    } else {
+        selectedItems.add(shortname);
+    }
+    renderItemPicker();
+    updatePickerFooter();
+}
+
+function updatePickerFooter() {
+    const footer = document.getElementById('pickerFooter');
+    const count = document.getElementById('selectionCount');
+    if (selectedItems.size > 0) {
+        footer.classList.add('active');
+        count.textContent = `${selectedItems.size} выбрано`;
+    } else {
+        footer.classList.remove('active');
+    }
+}
+
+function clearPickerSelection() {
+    selectedItems.clear();
+    renderItemPicker();
+    updatePickerFooter();
+}
+
+function addSelectedItems() {
+    if (selectedItems.size === 0) return;
+    selectedItems.forEach(shortname => {
+        addItemLocal(shortname);
+    });
+    showToast(`Добавлено ${selectedItems.size} предметов`, 'success');
+    closeItemPicker();
+}
+
+function setCategory(cat) { currentCategory = cat; renderItemPicker(); }
+function scrollCategories(dir) { document.getElementById('itemCategories').scrollBy({ left: dir * 150, behavior: 'smooth' }); }
+function filterItems() { renderItemPicker(); }
+
+function addItem(shortname) {
+    closeItemPicker();
+    addItemLocal(shortname);
+}
+
+// ============ TABLE SEARCH ============
+function filterLootTable() {
+    const input = document.getElementById('headerSearchInput');
+    const search = input ? input.value.toLowerCase().trim() : '';
+    const rows = document.querySelectorAll('#lootRows .loot-row');
+    const countEl = document.getElementById('headerSearchCount');
+    
+    let visibleCount = 0;
+    let totalCount = rows.length;
+    
+    rows.forEach(row => {
+        const itemName = row.querySelector('.loot-identity span:not(.loot-num)')?.textContent?.toLowerCase() || '';
+        const index = row.dataset.index;
+        const item = localItems[index];
+        const shortname = item?.shortname?.toLowerCase() || '';
+        
+        if (!search || itemName.includes(search) || shortname.includes(search)) {
+            row.classList.remove('hidden');
+            row.classList.toggle('highlight', search && search.length > 0);
+            visibleCount++;
+        } else {
+            row.classList.add('hidden');
+            row.classList.remove('highlight');
+        }
+    });
+    
+    if (countEl) {
+        countEl.textContent = search ? `${visibleCount}/${totalCount}` : '';
+    }
+}
+
+// ============ ITEM ACTIONS (legacy support) ============
+function updateItem(index, field, value) { updateItemLocal(index, field, value); }
+function removeItem(index) { removeItemLocal(index); }
+
+// ============ QUICK PRESETS ============
+function openPresetsModal() {
+    document.getElementById('presetsModal').classList.add('active');
+    updatePresetCounts();
+}
+
+function closePresetsModal() {
+    document.getElementById('presetsModal').classList.remove('active');
+    hidePresetPreview();
+}
+
+function updatePresetCounts() {
+    document.querySelectorAll('.preset-count[data-category]').forEach(el => {
+        const items = ALL_ITEMS.filter(i => i.category === el.dataset.category);
+        el.textContent = items.length > 0 ? `${items.length}` : '';
+    });
+}
+
+function showPresetPreview(category) {
+    const items = ALL_ITEMS.filter(i => i.category === category);
+    const previewEmpty = document.getElementById('previewEmpty');
+    const previewContent = document.getElementById('previewContent');
+    
+    if (items.length === 0) { previewEmpty.style.display = 'flex'; previewContent.classList.remove('active'); return; }
+    
+    previewEmpty.style.display = 'none';
+    document.getElementById('previewTitle').textContent = category;
+    document.getElementById('previewCount').textContent = `${items.length} ${getItemsWord(items.length)}`;
+    document.getElementById('previewItems').innerHTML = items.map((item, i) => `
+        <div class="preview-item" style="animation-delay: ${Math.min(i * 20, 400)}ms">
+            <img src="/icons/${encodeURIComponent(item.shortname)}.png" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><rect width=%2224%22 height=%2224%22 rx=%224%22/></svg>'">
+            <span>${item.name}</span>
+        </div>
+    `).join('');
+    previewContent.classList.add('active');
+}
+
+function hidePresetPreview() {
+    document.getElementById('previewContent').classList.remove('active');
+    document.getElementById('previewEmpty').style.display = 'flex';
+}
+
+function getItemsWord(n) {
+    const cases = [2, 0, 1, 1, 1, 2];
+    return ['предмет', 'предмета', 'предметов'][(n % 100 > 4 && n % 100 < 20) ? 2 : cases[Math.min(n % 10, 5)]];
+}
+
+function addPreset(category) {
+    const items = ALL_ITEMS.filter(i => i.category === category);
+    if (items.length === 0) { showToast('Категория пуста', 'error'); return; }
+    closePresetsModal();
+    items.forEach(item => {
+        localItems.push({ shortname: item.shortname, displayName: '', rareDrop: 100, isBlueprint: false, amount: { minAmount: 1, maxAmount: 1 }, skinID: 0 });
+    });
+    hasChanges = true;
+    renderItems();
+    showToast(`Добавлено ${items.length} предметов`, 'success');
+}
+
+async function clearAllItems() {
+    closePresetsModal();
+    const confirmed = await showConfirm('Очистить контейнер?', 'Все предметы будут удалены');
+    if (!confirmed) return;
+    localItems = [];
+    hasChanges = true;
+    renderItems();
+    showToast('Контейнер очищен', 'success');
+}
+
+// ============ IMPORT/EXPORT ============
+function openImport() { document.getElementById('importInput').click(); }
+
+async function handleImport(event) {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    
+    let imported = 0, errors = 0, lastName = null;
+    for (const file of files) {
+        try {
+            const data = JSON.parse(await file.text());
+            const name = file.name.replace('.json', '');
+            if (data.lootPresets !== undefined) {
+                await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, data }) });
+                imported++; lastName = name;
+            } else if (typeof data === 'object' && !Array.isArray(data)) {
+                for (const [key, value] of Object.entries(data)) {
+                    if (value.lootPresets !== undefined) {
+                        await fetch('/api/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: key, data: value }) });
+                        imported++; lastName = key;
+                    }
+                }
+            }
+        } catch (err) { errors++; }
+    }
+    event.target.value = '';
+    showToast(errors > 0 ? `Импортировано: ${imported}, ошибок: ${errors}` : `Импортировано ${imported}`, errors > 0 ? 'error' : 'success');
+    if (lastName) setTimeout(() => window.location.href = `/import/${encodeURIComponent(lastName)}`, 300);
+    else setTimeout(() => location.reload(), 300);
+}
+
+async function exportJson() {
+    if (!CONTAINER_NAME) return;
+    // Сначала сохраняем локальные изменения
+    if (hasChanges) await saveToServer();
+    
+    const res = await fetch(`/api/container/${encodeURIComponent(CONTAINER_NAME)}/export`);
+    const { name, data } = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name}.json`; a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Экспортировано', 'success');
+}
+
+async function exportAll() {
+    const res = await fetch('/api/containers/export');
+    const containers = await res.json();
+    if (Object.keys(containers).length === 0) { showToast('Нет контейнеров', 'error'); return; }
+    for (const [name, data] of Object.entries(containers)) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name}.json`; a.click();
+        URL.revokeObjectURL(a.href);
+    }
+    showToast(`Экспортировано ${Object.keys(containers).length}`, 'success');
+}
+
+function exportAllZip() {
+    window.location.href = '/api/containers/export-zip';
+    showToast('Скачивание ZIP...', 'success');
+}
+
+
+// ============ ITEM EDIT ============
+let editingIndex = -1;
+let currentSlotType = null;
+
+// Слоты модулей по категориям
+const MOD_SLOTS = {
+    scope: {
+        label: 'Прицел',
+        mods: [
+            { shortname: 'weapon.mod.8x.scope', name: '8x Прицел' },
+            { shortname: 'weapon.mod.small.scope', name: '4x Прицел' },
+            { shortname: 'weapon.mod.simplesight', name: 'Простой прицел' },
+            { shortname: 'weapon.mod.holosight', name: 'Голографический' }
+        ]
+    },
+    muzzle: {
+        label: 'Дуло',
+        mods: [
+            { shortname: 'weapon.mod.silencer', name: 'Глушитель' },
+            { shortname: 'weapon.mod.muzzleboost', name: 'Ускоритель' },
+            { shortname: 'weapon.mod.muzzlebrake', name: 'Компенсатор' }
+        ]
+    },
+    magazine: {
+        label: 'Магазин',
+        mods: [
+            { shortname: 'weapon.mod.extendedmags', name: 'Расширенный магазин' }
+        ]
+    },
+    underbarrel: {
+        label: 'Подствольник',
+        mods: [
+            { shortname: 'weapon.mod.flashlight', name: 'Фонарик' },
+            { shortname: 'weapon.mod.lasersight', name: 'Лазерный прицел' }
+        ]
+    }
+};
+
+// Оружие которое поддерживает модули
+const WEAPONS_WITH_MODS = [
+    // AK и скины
+    'rifle.ak', 'rifle.ak.ice', 'rifle.ak.diver', 'rifle.ak.jungle', 'rifle.ak.med',
+    // LR-300 и скины
+    'rifle.lr300', 'rifle.lr300.space',
+    // Остальные винтовки
+    'rifle.bolt', 'rifle.l96', 'rifle.m39', 'rifle.semiauto', 'rifle.sks',
+    // SMG
+    'smg.2', 'smg.mp5', 'smg.thompson', 'lmg.m249', 'hmlmg',
+    // Дробовики
+    'shotgun.pump', 'shotgun.spas12',
+    // Пистолеты
+    'pistol.m92', 'pistol.python', 'pistol.revolver', 'pistol.semiauto',
+    // Луки
+    'crossbow', 'bow.compound'
+];
+
+// Типы патронов для оружия
+const AMMO_TYPES = {
+    rifle: [
+        { shortname: 'ammo.rifle', name: 'Обычные 5.56' },
+        { shortname: 'ammo.rifle.hv', name: 'Скоростные 5.56' },
+        { shortname: 'ammo.rifle.incendiary', name: 'Зажигательные 5.56' },
+        { shortname: 'ammo.rifle.explosive', name: 'Разрывные 5.56' }
+    ],
+    pistol: [
+        { shortname: 'ammo.pistol', name: 'Обычные 9мм' },
+        { shortname: 'ammo.pistol.hv', name: 'Скоростные 9мм' },
+        { shortname: 'ammo.pistol.fire', name: 'Зажигательные 9мм' }
+    ],
+    shotgun: [
+        { shortname: 'ammo.shotgun', name: 'Картечь 12к' },
+        { shortname: 'ammo.shotgun.slug', name: 'Пули 12к' },
+        { shortname: 'ammo.shotgun.fire', name: 'Зажигательные 12к' },
+        { shortname: 'ammo.handmade.shell', name: 'Самодельные' }
+    ],
+    arrow: [
+        { shortname: 'arrow.wooden', name: 'Деревянные стрелы' },
+        { shortname: 'arrow.hv', name: 'Скоростные стрелы' },
+        { shortname: 'arrow.fire', name: 'Огненные стрелы' },
+        { shortname: 'arrow.bone', name: 'Костяные стрелы' }
+    ]
+};
+
+// Какой тип патронов использует оружие
+const WEAPON_AMMO_TYPE = {
+    'rifle.ak': 'rifle', 'rifle.ak.ice': 'rifle', 'rifle.bolt': 'rifle', 'rifle.l96': 'rifle',
+    'rifle.lr300': 'rifle', 'rifle.m39': 'rifle', 'rifle.semiauto': 'rifle', 'rifle.sks': 'rifle',
+    'lmg.m249': 'rifle', 'hmlmg': 'rifle',
+    'smg.2': 'pistol', 'smg.mp5': 'pistol', 'smg.thompson': 'pistol',
+    'pistol.m92': 'pistol', 'pistol.python': 'pistol', 'pistol.revolver': 'pistol', 'pistol.semiauto': 'pistol',
+    'shotgun.pump': 'shotgun', 'shotgun.spas12': 'shotgun', 'shotgun.double': 'shotgun', 'shotgun.waterpipe': 'shotgun',
+    'crossbow': 'arrow', 'bow.compound': 'arrow', 'bow.hunting': 'arrow'
+};
+
+function getModSlot(shortname) {
+    for (const [slot, data] of Object.entries(MOD_SLOTS)) {
+        if (data.mods.some(m => m.shortname === shortname)) return slot;
+    }
+    return null;
+}
+
+function getModName(shortname) {
+    for (const data of Object.values(MOD_SLOTS)) {
+        const mod = data.mods.find(m => m.shortname === shortname);
+        if (mod) return mod.name;
+    }
+    return shortname;
+}
+
+function openItemEdit(index) {
+    if (index < 0 || index >= localItems.length) return;
+    editingIndex = index;
+    const item = localItems[index];
+    
+    const itemName = getItemDisplayName(item.shortname);
+    document.getElementById('editItemIcon').src = `/icons/${encodeURIComponent(item.shortname)}.png`;
+    document.getElementById('editItemName').textContent = itemName;
+    document.getElementById('editItemShortname').textContent = item.shortname;
+    document.getElementById('editIsBlueprint').checked = item.isBlueprint || false;
+    document.getElementById('editRareDrop').value = item.rareDrop || 100;
+    document.getElementById('editMinAmount').value = item.amount?.minAmount || 1;
+    document.getElementById('editMaxAmount').value = item.amount?.maxAmount || 1;
+    document.getElementById('editSkinID').value = item.skinID || 0;
+    document.getElementById('editCondition').value = item.condition || '';
+    document.getElementById('editDisplayName').value = item.displayName || '';
+    
+    // Кнопка копирования shortname
+    document.getElementById('copyShortname').onclick = () => copyShortname(item.shortname);
+    
+    // Обновляем заголовок страницы и URL
+    document.title = `${itemName} - ${CONTAINER_NAME} - Loot Editor`;
+    history.pushState({ item: item.shortname }, '', `/container/${encodeURIComponent(CONTAINER_NAME)}/${encodeURIComponent(item.shortname)}`);
+    
+    const isWeapon = WEAPONS_WITH_MODS.includes(item.shortname);
+    const isBlueprint = item.isBlueprint || false;
+    const hasDisplayName = !!(item.displayName && item.displayName.trim());
+    
+    // Блокируем чертёж если есть кастомное название
+    document.getElementById('editIsBlueprint').disabled = hasDisplayName;
+    
+    // Рендерим слоты в шапке (BP или модули)
+    renderHeaderSlots();
+    
+    // Показываем модули только для оружия и НЕ чертежа
+    document.getElementById('attachmentsSection').style.display = (isWeapon && !isBlueprint) ? 'flex' : 'none';
+    
+    if (isWeapon && !isBlueprint) renderAttachmentSlots();
+    
+    // Показываем поля патронов для оружия
+    const ammoType = WEAPON_AMMO_TYPE[item.shortname];
+    const showAmmo = ammoType && !isBlueprint;
+    document.getElementById('ammoRow').style.display = showAmmo ? 'flex' : 'none';
+    document.getElementById('ammoTypeRow').style.display = showAmmo ? 'flex' : 'none';
+    
+    if (showAmmo) {
+        document.getElementById('editAmmo').value = item.ammo ?? '';
+        // Заполняем dropdown типами патронов
+        populateAmmoDropdown(ammoType, item.ammoType);
+    }
+    
+    document.getElementById('itemEditModal').classList.add('active');
+}
+
+function copyShortname(shortname) {
+    navigator.clipboard.writeText(shortname).then(() => {
+        const btn = document.getElementById('copyShortname');
+        btn.classList.add('copied');
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+        }, 1500);
+        showToast('Скопировано', 'success');
+    });
+}
+
+function renderHeaderSlots() {
+    if (editingIndex < 0) return;
+    const item = localItems[editingIndex];
+    const slotsContainer = document.getElementById('editItemSlots');
+    const isWeapon = WEAPONS_WITH_MODS.includes(item.shortname);
+    const attachments = item.attachments || [];
+    
+    const emptySlotSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
+    let html = '';
+    
+    // Если чертёж — показываем иконку BP
+    if (item.isBlueprint) {
+        html = `<div class="edit-item-slot filled"><img src="/icons/blueprintbase.png" title="Чертёж"></div>`;
+    } 
+    // Если оружие — показываем все 4 слота
+    else if (isWeapon) {
+        Object.entries(MOD_SLOTS).forEach(([slotType, slotData]) => {
+            const equipped = attachments.find(att => slotData.mods.some(m => m.shortname === att));
+            if (equipped) {
+                html += `<div class="edit-item-slot filled"><img src="/icons/${encodeURIComponent(equipped)}.png" title="${slotData.label}"></div>`;
+            } else {
+                html += `<div class="edit-item-slot" title="${slotData.label}">${emptySlotSvg}</div>`;
+            }
+        });
+    }
+    
+    slotsContainer.innerHTML = html;
+}
+
+function closeItemEdit() {
+    document.getElementById('itemEditModal').classList.remove('active');
+    editingIndex = -1;
+    // Восстанавливаем заголовок и URL
+    document.title = `${CONTAINER_NAME} - Loot Editor`;
+    history.pushState({}, '', `/container/${encodeURIComponent(CONTAINER_NAME)}`);
+    renderItems();
+}
+
+function updateEditField(field, value) {
+    if (editingIndex < 0 || editingIndex >= localItems.length) return;
+    const item = localItems[editingIndex];
+    
+    switch (field) {
+        case 'isBlueprint': 
+            item.isBlueprint = value;
+            // Если включили чертёж — очищаем модули и скрываем секции
+            if (value) {
+                item.attachments = [];
+                item.ammo = null;
+                item.ammoType = null;
+                document.getElementById('attachmentsSection').style.display = 'none';
+                document.getElementById('ammoRow').style.display = 'none';
+                document.getElementById('ammoTypeRow').style.display = 'none';
+            } else {
+                // Показываем модули и патроны если это оружие
+                const isWeapon = WEAPONS_WITH_MODS.includes(item.shortname);
+                const ammoType = WEAPON_AMMO_TYPE[item.shortname];
+                document.getElementById('attachmentsSection').style.display = isWeapon ? 'flex' : 'none';
+                document.getElementById('ammoRow').style.display = ammoType ? 'flex' : 'none';
+                document.getElementById('ammoTypeRow').style.display = ammoType ? 'flex' : 'none';
+                if (isWeapon) renderAttachmentSlots();
+                if (ammoType) populateAmmoDropdown(ammoType, null);
+            }
+            renderHeaderSlots();
+            break;
+        case 'rareDrop': item.rareDrop = parseInt(value) || 100; break;
+        case 'minAmount':
+            if (!item.amount) item.amount = { minAmount: 1, maxAmount: 1 };
+            item.amount.minAmount = parseInt(value) || 1;
+            break;
+        case 'maxAmount':
+            if (!item.amount) item.amount = { minAmount: 1, maxAmount: 1 };
+            item.amount.maxAmount = parseInt(value) || 1;
+            break;
+        case 'skinID': item.skinID = parseInt(value) || 0; break;
+        case 'condition': 
+            const cond = parseInt(value);
+            item.condition = (cond >= 0 && cond <= 100) ? cond : null;
+            break;
+        case 'displayName': 
+            item.displayName = value;
+            // Блокируем чертёж если есть кастомное название
+            const hasName = !!(value && value.trim());
+            document.getElementById('editIsBlueprint').disabled = hasName;
+            if (hasName && item.isBlueprint) {
+                item.isBlueprint = false;
+                document.getElementById('editIsBlueprint').checked = false;
+                renderHeaderSlots();
+            }
+            break;
+        case 'ammo':
+            const ammoVal = parseInt(value);
+            item.ammo = (ammoVal > 0) ? ammoVal : null;
+            break;
+        case 'ammoType':
+            item.ammoType = value || null;
+            break;
+    }
+    hasChanges = true;
+}
+
+function deleteEditItem() {
+    if (editingIndex < 0) return;
+    localItems.splice(editingIndex, 1);
+    hasChanges = true;
+    closeItemEdit();
+    showToast('Предмет удалён', 'success');
+}
+
+function renderAttachmentSlots() {
+    if (editingIndex < 0) return;
+    const item = localItems[editingIndex];
+    const attachments = item.attachments || [];
+    
+    const list = document.getElementById('attachmentsList');
+    list.innerHTML = Object.entries(MOD_SLOTS).map(([slotType, slotData]) => {
+        const equipped = attachments.find(att => slotData.mods.some(m => m.shortname === att));
+        const mod = equipped ? slotData.mods.find(m => m.shortname === equipped) : null;
+        
+        if (equipped && mod) {
+            return `
+                <div class="attachment-slot filled">
+                    <div class="attachment-slot-icon">
+                        <img src="/icons/${encodeURIComponent(equipped)}.png" onerror="this.style.display='none'">
+                    </div>
+                    <div class="attachment-slot-info">
+                        <div class="attachment-slot-label">${slotData.label}</div>
+                        <div class="attachment-slot-name">${mod.name}</div>
+                    </div>
+                    <button class="attachment-slot-remove" onclick="removeAttachmentSlot('${slotType}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="attachment-slot" onclick="openAttachmentPicker('${slotType}')">
+                    <div class="attachment-slot-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    </div>
+                    <div class="attachment-slot-info">
+                        <div class="attachment-slot-label">${slotData.label}</div>
+                        <div class="attachment-slot-empty">Не установлен</div>
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
+}
+
+function removeAttachmentSlot(slotType) {
+    if (editingIndex < 0) return;
+    const item = localItems[editingIndex];
+    if (!item.attachments) return;
+    
+    const slotData = MOD_SLOTS[slotType];
+    item.attachments = item.attachments.filter(att => !slotData.mods.some(m => m.shortname === att));
+    hasChanges = true;
+    renderAttachmentSlots();
+    renderHeaderSlots();
+}
+
+function openAttachmentPicker(slotType) {
+    currentSlotType = slotType;
+    const slotData = MOD_SLOTS[slotType];
+    const grid = document.getElementById('attachmentPickerGrid');
+    
+    grid.innerHTML = slotData.mods.map(mod => `
+        <div class="attachment-picker-item" onclick="addAttachment('${mod.shortname}')">
+            <img src="/icons/${encodeURIComponent(mod.shortname)}.png" onerror="this.style.display='none'">
+            <span>${mod.name}</span>
+        </div>
+    `).join('');
+    
+    document.getElementById('attachmentPickerModal').classList.add('active');
+}
+
+function closeAttachmentPicker() {
+    document.getElementById('attachmentPickerModal').classList.remove('active');
+    currentSlotType = null;
+}
+
+function addAttachment(shortname) {
+    if (editingIndex < 0 || !currentSlotType) return;
+    const item = localItems[editingIndex];
+    const slotData = MOD_SLOTS[currentSlotType];
+    
+    if (!item.attachments) item.attachments = [];
+    
+    // Удаляем старый модуль из этого слота
+    item.attachments = item.attachments.filter(att => !slotData.mods.some(m => m.shortname === att));
+    
+    // Добавляем новый
+    item.attachments.push(shortname);
+    hasChanges = true;
+    
+    closeAttachmentPicker();
+    renderAttachmentSlots();
+    renderHeaderSlots();
+}
+
+// ============ AMMO PICKER ============
+function populateAmmoDropdown(ammoCategory, selectedValue) {
+    const dropdown = document.getElementById('ammoDropdown');
+    const picker = document.getElementById('ammoPicker');
+    const pickerIcon = document.getElementById('ammoPickerIcon');
+    const pickerText = document.getElementById('ammoPickerText');
+    const ammoOptions = AMMO_TYPES[ammoCategory] || [];
+    
+    // Обновляем текущее значение в picker
+    if (selectedValue) {
+        const selected = ammoOptions.find(a => a.shortname === selectedValue);
+        if (selected) {
+            pickerIcon.src = `/icons/${encodeURIComponent(selected.shortname)}.png`;
+            pickerIcon.style.display = 'block';
+            pickerText.textContent = selected.name;
+        }
+    } else {
+        pickerIcon.style.display = 'none';
+        pickerText.textContent = 'Стандартные';
+    }
+    
+    // Заполняем dropdown
+    dropdown.innerHTML = `<div class="ammo-option ${!selectedValue ? 'selected' : ''}" onclick="selectAmmoType('')">
+        <span>Стандартные</span>
+    </div>` + ammoOptions.map(a => `
+        <div class="ammo-option ${selectedValue === a.shortname ? 'selected' : ''}" onclick="selectAmmoType('${a.shortname}')">
+            <img src="/icons/${encodeURIComponent(a.shortname)}.png" onerror="this.style.display='none'">
+            <span>${a.name}</span>
+        </div>
+    `).join('');
+}
+
+function toggleAmmoPicker() {
+    const dropdown = document.getElementById('ammoDropdown');
+    const picker = document.getElementById('ammoPicker');
+    const isOpen = dropdown.classList.contains('active');
+    
+    if (isOpen) {
+        dropdown.classList.remove('active');
+        picker.classList.remove('open');
+    } else {
+        dropdown.classList.add('active');
+        picker.classList.add('open');
+    }
+}
+
+function selectAmmoType(shortname) {
+    const dropdown = document.getElementById('ammoDropdown');
+    const picker = document.getElementById('ammoPicker');
+    const pickerIcon = document.getElementById('ammoPickerIcon');
+    const pickerText = document.getElementById('ammoPickerText');
+    
+    dropdown.classList.remove('active');
+    picker.classList.remove('open');
+    
+    if (shortname) {
+        // Найдём название
+        for (const ammos of Object.values(AMMO_TYPES)) {
+            const found = ammos.find(a => a.shortname === shortname);
+            if (found) {
+                pickerIcon.src = `/icons/${encodeURIComponent(shortname)}.png`;
+                pickerIcon.style.display = 'block';
+                pickerText.textContent = found.name;
+                break;
+            }
+        }
+    } else {
+        pickerIcon.style.display = 'none';
+        pickerText.textContent = 'Стандартные';
+    }
+    
+    updateEditField('ammoType', shortname);
+}
+
+// Закрытие dropdown при клике вне
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('ammoDropdown');
+    const picker = document.getElementById('ammoPicker');
+    if (dropdown && picker && !picker.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('active');
+        picker.classList.remove('open');
+    }
+});
+
+
+// ============ HOTKEYS ============
+function handleHotkeys(e) {
+    // Ctrl+S - сохранить
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveToServer();
+    }
+    
+    // Ctrl+/ - поиск по таблице
+    if (e.ctrlKey && e.key === '/') {
+        e.preventDefault();
+        toggleTableSearch();
+    }
+    
+    // Delete - удалить выбранный предмет (если открыто редактирование)
+    if (e.key === 'Delete' && editingIndex >= 0) {
+        e.preventDefault();
+        deleteEditItem();
+    }
+    
+    // Escape - закрыть модалки или поиск
+    if (e.key === 'Escape') {
+        if (tableSearchActive) {
+            toggleTableSearch();
+        } else if (document.getElementById('attachmentPickerModal')?.classList.contains('active')) {
+            closeAttachmentPicker();
+        } else if (document.getElementById('itemEditModal')?.classList.contains('active')) {
+            closeItemEdit();
+        } else if (document.getElementById('itemPickerModal')?.classList.contains('active')) {
+            closeItemPicker();
+        } else if (document.getElementById('presetsModal')?.classList.contains('active')) {
+            closePresetsModal();
+        } else if (document.getElementById('containerPickerModal')?.classList.contains('active')) {
+            closeContainerPicker();
+        }
+    }
+}
+
+
+// ============ LANGUAGE ============
+function changeLanguage(lang) {
+    localStorage.setItem('lootEditorLang', lang);
+    // Пока просто сохраняем, полная локализация будет позже
+    showToast(lang === 'ru' ? 'Язык: Русский' : 'Language: English', 'info');
+}
+
+// Init language
+(function() {
+    const saved = localStorage.getItem('lootEditorLang') || 'ru';
+    const select = document.getElementById('langSelect');
+    if (select) select.value = saved;
+})();
+

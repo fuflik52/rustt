@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title>Loot Editor</title>
+    <style>
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 100px);
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .welcome-content {
+            max-width: 700px;
+        }
+        
+        .welcome-icon-new {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 28px;
+            background: var(--accent);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .welcome-icon-new svg {
+            width: 50px;
+            height: 50px;
+            color: white;
+        }
+        
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+        
+        .welcome-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 36px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .welcome-actions-new {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 48px;
+        }
+        
+        .btn-welcome-primary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-welcome-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-welcome-primary svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .btn-welcome-secondary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-welcome-secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .btn-welcome-secondary svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* Container Chips */
+        .welcome-containers-new {
+            margin-bottom: 0;
+        }
+        
+        .welcome-containers-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        
+        .welcome-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .welcome-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .welcome-chip:hover {
+            border-color: var(--accent);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .welcome-chip svg {
+            width: 16px;
+            height: 16px;
+            color: var(--accent);
+        }
+        
+        .welcome-chip-img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <%- include('partials/sidebar', { containers, currentContainer, rustContainers }) %>
+        
+        <div class="main">
+            <div class="header">
+                <h1>Loot Editor</h1>
+                <div class="header-actions">
+                    <% if (containers.length > 1) { %>
+                    <button class="btn" onclick="exportAllZip()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Скачать всё
+                    </button>
+                    <% } %>
+                    <button class="btn" onclick="openImport()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Загрузить
+                    </button>
+                </div>
+            </div>
+            
+            <div class="welcome-screen">
+                <div class="welcome-content">
+                    <div class="welcome-icon-new">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </div>
+                    
+                    <h1 class="welcome-title">Добро пожаловать!</h1>
+                    <p class="welcome-subtitle">Выберите контейнер из списка слева или создайте новый</p>
+                    
+                    <div class="welcome-actions-new">
+                        <button class="btn-welcome-primary" onclick="openContainerPicker()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Создать контейнер
+                        </button>
+                        <button class="btn-welcome-secondary" onclick="openImport()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Импортировать JSON
+                        </button>
+                    </div>
+                    
+                    <% if (containers.length > 0) { %>
+                    <div class="welcome-containers-new">
+                        <div class="welcome-containers-title">Ваши контейнеры</div>
+                        <div class="welcome-chips">
+                            <% containers.forEach(name => { 
+                                const containerInfo = rustContainers.find(c => c.shortname === name) || {};
+                                const containerImage = containerInfo.image || '';
+                            %>
+                            <a href="/container/<%= encodeURIComponent(name) %>" class="welcome-chip">
+                                <% if (containerImage) { %>
+                                    <img src="<%= containerImage %>" class="welcome-chip-img" onerror="this.style.display='none'">
+                                <% } else { %>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                    </svg>
+                                <% } %>
+                                <%= name %>
+                            </a>
+                            <% }) %>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+            
+            <%- include('partials/footer') %>
+        </div>
+    </div>
+    
+    <%- include('partials/modals') %>
+    
+    <script>
+        const CONTAINER_NAME = null;
+        const ALL_ITEMS = [];
+        const RUST_CONTAINERS = <%- JSON.stringify(rustContainers) %>;
+        const EXISTING_CONTAINERS = <%- JSON.stringify(containers) %>;
+    </script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+{
+  "enabled": true,
+  "amountLoot": {
+    "minAmount": 3,
+    "maxAmount": 4
+  },
+  "lootPresets": [
+    {
+      "shortname": "icepick.salvaged",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    },
+    {
+      "shortname": "axe.salvaged",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    },
+    {
+      "shortname": "chainsaw",
+      "displayName": "",
+      "rareDrop": 15,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    },
+    {
+      "shortname": "jackhammer",
+      "displayName": "",
+      "rareDrop": 15,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    },
+    {
+      "shortname": "lowgradefuel",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 125,
+        "maxAmount": 125
+      }
+    },
+    {
+      "shortname": "leather",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 150,
+        "maxAmount": 150
+      }
+    },
+    {
+      "shortname": "ammo.rifle",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 32,
+        "maxAmount": 32
+      }
+    },
+    {
+      "shortname": "ammo.pistol",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 32,
+        "maxAmount": 32
+      }
+    },
+    {
+      "shortname": "pistol.semiauto",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title>Player Spins Stats</title>
+    <style>
+        .progress-page { padding: 40px; max-width: 1400px; margin: 0 auto; }
+        .progress-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+        .progress-title { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+        .progress-subtitle { color: var(--text-secondary); font-size: 14px; }
+        .view-toggle { display: flex; gap: 4px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 4px; }
+        .view-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: none; background: transparent; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+        .view-btn:hover { color: var(--text); background: var(--bg-tertiary); }
+        .view-btn.active { background: var(--accent); color: white; }
+        .view-btn svg { width: 18px; height: 18px; }
+        .progress-empty { text-align: center; padding: 80px 40px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); }
+        .progress-empty-icon { width: 64px; height: 64px; margin: 0 auto 16px; color: var(--text-muted); }
+        .progress-empty-text { font-size: 16px; color: var(--text-secondary); }
+        .progress-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .toolbar { display: flex; gap: 12px; margin-bottom: 20px; }
+        .search-input { flex: 1; min-width: 200px; max-width: 400px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .search-input::placeholder { color: var(--text-muted); }
+        .progress-table-wrapper { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .progress-table { width: 100%; border-collapse: collapse; }
+        .progress-table th, .progress-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        .progress-table th { background: var(--bg-tertiary); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+        .progress-table tr:last-child td { border-bottom: none; }
+        .progress-table tr:hover td { background: rgba(59, 130, 246, 0.05); }
+        .item-cell { display: flex; align-items: center; gap: 12px; }
+        .item-icon { width: 40px; height: 40px; object-fit: contain; background: var(--bg-tertiary); border-radius: 6px; padding: 4px; }
+        .item-name { font-weight: 500; color: var(--text); }
+        .item-shortname { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+        .amount-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; padding: 4px 10px; background: var(--accent); color: white; border-radius: 6px; font-weight: 600; font-size: 14px; }
+        .count-badge { background: var(--bg-tertiary); color: var(--text); }
+        .progress-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+        .grid-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.2s; }
+        .grid-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .grid-card .item-icon { width: 64px; height: 64px; margin-bottom: 12px; }
+        .grid-card .item-name { font-size: 14px; margin-bottom: 4px; }
+        .grid-card .item-shortname { margin-bottom: 12px; }
+        .grid-card-stats { display: flex; gap: 8px; width: 100%; justify-content: center; }
+        .grid-stat { display: flex; flex-direction: column; align-items: center; padding: 8px 12px; background: var(--bg-tertiary); border-radius: 6px; flex: 1; }
+        .grid-stat-value { font-weight: 700; color: var(--accent); font-size: 16px; }
+        .grid-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div class="progress-page">
+        <div class="progress-header">
+            <div>
+                <h1 class="progress-title">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Player Spins Stats
+                </h1>
+                <p class="progress-subtitle">Статистика выпавших предметов из рулетки</p>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="table" title="Таблица">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <button class="view-btn" data-view="grid" title="Сетка">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <% 
+        const aggregated = {};
+        let totalSpins = 0;
+        let totalPlayers = 0;
+        Object.values(progressData).forEach(player => {
+            if (player && player.History && Array.isArray(player.History)) {
+                totalPlayers++;
+                player.History.forEach(entry => {
+                    const shortname = entry.Reward;
+                    const amount = entry.Amount || 1;
+                    totalSpins++;
+                    if (!aggregated[shortname]) {
+                        aggregated[shortname] = { count: 0, totalAmount: 0 };
+                    }
+                    aggregated[shortname].count++;
+                    aggregated[shortname].totalAmount += amount;
+                });
+            }
+        });
+        const entries = Object.entries(aggregated);
+        const totalUniqueItems = entries.length;
+        const sortedEntries = entries.sort((a, b) => b[1].count - a[1].count);
+        %>
+        
+        <% if (totalUniqueItems === 0) { %>
+        <div class="progress-empty">
+            <svg class="progress-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            </svg>
+            <p class="progress-empty-text">Нет данных о спинах.</p>
+        </div>
+        <% } else { %>
+        
+        <div class="progress-stats">
+            <div class="stat-card"><div class="stat-value"><%= totalPlayers %></div><div class="stat-label">Игроков</div></div>
+            <div class="stat-card"><div class="stat-value"><%= totalSpins.toLocaleString() %></div><div class="stat-label">Всего спинов</div></div>
+            <div class="stat-card"><div class="stat-value"><%= totalUniqueItems %></div><div class="stat-label">Уникальных наград</div></div>
+            <div class="stat-card"><div class="stat-value"><%= totalPlayers > 0 ? (totalSpins / totalPlayers).toFixed(1) : 0 %></div><div class="stat-label">Спинов на игрока</div></div>
+        </div>
+        
+        <div class="toolbar">
+            <input type="text" class="search-input" id="searchInput" placeholder="Поиск...">
+        </div>
+        
+        <div id="tableView" class="progress-table-wrapper">
+            <table class="progress-table" id="progressTable">
+                <thead><tr><th>Предмет</th><th>Shortname</th><th>Выпало раз</th><th>Всего</th></tr></thead>
+                <tbody>
+                    <% sortedEntries.forEach(([shortname, data]) => { const itemName = getItemName(shortname); %>
+                    <tr data-shortname="<%= shortname.toLowerCase() %>" data-name="<%= itemName.toLowerCase() %>">
+                        <td><div class="item-cell"><img src="/icons/<%= shortname.toLowerCase() %>.png" class="item-icon" onerror="this.src='/icons/rock.png'"><span class="item-name"><%= itemName %></span></div></td>
+                        <td><span class="item-shortname"><%= shortname %></span></td>
+                        <td><span class="amount-badge count-badge"><%= data.count %></span></td>
+                        <td><span class="amount-badge"><%= data.totalAmount.toLocaleString() %></span></td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="gridView" class="progress-grid" style="display:none;">
+            <% sortedEntries.forEach(([shortname, data]) => { const itemName = getItemName(shortname); %>
+            <div class="grid-card" data-shortname="<%= shortname.toLowerCase() %>" data-name="<%= itemName.toLowerCase() %>">
+                <img src="/icons/<%= shortname.toLowerCase() %>.png" class="item-icon" onerror="this.src='/icons/rock.png'">
+                <span class="item-name"><%= itemName %></span>
+                <span class="item-shortname"><%= shortname %></span>
+                <div class="grid-card-stats">
+                    <div class="grid-stat"><span class="grid-stat-value"><%= data.count %></span><span class="grid-stat-label">Раз</span></div>
+                    <div class="grid-stat"><span class="grid-stat-value"><%= data.totalAmount.toLocaleString() %></span><span class="grid-stat-label">Всего</span></div>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+        <% } %>
+    </div>
+    
+    <script>
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const isGrid = this.dataset.view === 'grid';
+                document.getElementById('tableView').style.display = isGrid ? 'none' : 'block';
+                document.getElementById('gridView').style.display = isGrid ? 'grid' : 'none';
+                localStorage.setItem('spinsView', this.dataset.view);
+            });
+        });
+        if (localStorage.getItem('spinsView') === 'grid') {
+            document.getElementById('tableView').style.display = 'none';
+            document.getElementById('gridView').style.display = 'grid';
+            document.querySelector('[data-view="grid"]')?.classList.add('active');
+            document.querySelector('[data-view="table"]')?.classList.remove('active');
+        }
+        document.getElementById('searchInput')?.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            document.querySelectorAll('#progressTable tbody tr, .grid-card').forEach(el => {
+                const match = el.dataset.shortname.includes(q) || el.dataset.name.includes(q);
+                el.style.display = match ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>
