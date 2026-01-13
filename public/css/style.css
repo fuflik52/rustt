@@ -284,8 +284,8 @@ body::after {
 
 /* Loot Table */
 .loot-table { background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; transition: all 0.3s; }
-.loot-header { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 50px; padding: 12px 20px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.loot-row { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 50px; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border); transition: all 0.2s ease; animation: rowIn 0.3s ease; }
+.loot-header { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 40px 40px; padding: 12px 20px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.loot-row { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 40px 40px; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border); transition: all 0.2s ease; animation: rowIn 0.3s ease; }
 .loot-row:hover { background: var(--bg-tertiary); }
 .loot-row:last-child { border-bottom: none; }
 @keyframes rowIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -298,14 +298,16 @@ body::after {
 .loot-input::-webkit-outer-spin-button, .loot-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .loot-input:focus { outline: none; border-color: var(--accent); background: var(--bg-secondary); }
 .loot-skin { width: 110px; }
-.loot-copy { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s; }
-.loot-copy:hover { color: var(--accent); background: rgba(59, 130, 246, 0.1); }
+.loot-copy { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s; opacity: 0.6; }
+.loot-copy:hover { color: var(--accent); background: rgba(59, 130, 246, 0.15); opacity: 1; }
 .loot-copy svg { width: 16px; height: 16px; }
-.loot-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s; }
-.loot-delete:hover { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+.loot-row:hover .loot-copy { opacity: 1; }
+.loot-delete { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s; opacity: 0.6; }
+.loot-row:hover .loot-delete { opacity: 1; }
+.loot-delete:hover { color: var(--danger); background: rgba(239, 68, 68, 0.15); opacity: 1; }
 .loot-delete svg { width: 16px; height: 16px; }
-.btn-paste { background: rgba(16, 185, 129, 0.1) !important; border-color: var(--success) !important; color: var(--success) !important; }
-.btn-paste:hover { background: rgba(16, 185, 129, 0.2) !important; }
+.btn-paste { background: rgba(16, 185, 129, 0.15) !important; border-color: var(--success) !important; color: var(--success) !important; }
+.btn-paste:hover { background: rgba(16, 185, 129, 0.25) !important; }
 .bp-badge { background: rgba(59, 130, 246, 0.15); color: var(--accent); font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
 
 /* Add Item Row */
