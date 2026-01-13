@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title>Игроки - Loot Editor</title>
+    <style>
+        .players-page { padding: 40px; max-width: 1400px; margin: 0 auto; }
+        .players-header { margin-bottom: 32px; }
+        .players-title { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+        .players-title svg { width: 28px; height: 28px; color: var(--accent); }
+        .players-subtitle { color: var(--text-secondary); font-size: 14px; }
+        
+        .players-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(59,130,246,0.1); display: flex; align-items: center; justify-content: center; color: var(--accent); }
+        .stat-icon svg { width: 24px; height: 24px; }
+        .stat-info { flex: 1; }
+        .stat-value { font-size: 24px; font-weight: 700; color: var(--text); }
+        .stat-label { font-size: 12px; color: var(--text-muted); }
+        
+        .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 250px; max-width: 400px; position: relative; }
+        .search-box svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted); }
+        .search-input { width: 100%; padding: 12px 16px 12px 44px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .sort-select { padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; cursor: pointer; }
+
+        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .player-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: all 0.2s; cursor: pointer; }
+        .player-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        .player-card-header { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--bg-tertiary); }
+        .player-avatar { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: var(--bg-secondary); border: 2px solid var(--border); }
+        .player-avatar.loading { background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .player-info { flex: 1; min-width: 0; }
+        .player-name { font-size: 16px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .player-steamid { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+        .player-card-body { padding: 16px; }
+        .player-stats-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .player-stat { flex: 1; background: var(--bg-tertiary); border-radius: 8px; padding: 10px; text-align: center; }
+        .player-stat-value { font-size: 18px; font-weight: 700; color: var(--accent); }
+        .player-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+        .player-rewards { display: flex; gap: 6px; flex-wrap: wrap; }
+        .player-reward { width: 32px; height: 32px; border-radius: 6px; background: var(--bg-tertiary); padding: 4px; }
+        .player-reward img { width: 100%; height: 100%; object-fit: contain; }
+        .player-reward-more { width: 32px; height: 32px; border-radius: 6px; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-muted); font-weight: 600; }
+        .player-card-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .player-link { display: flex; align-items: center; gap: 6px; color: var(--accent); font-size: 12px; text-decoration: none; }
+        .player-link:hover { text-decoration: underline; }
+        .player-link svg { width: 14px; height: 14px; }
+        .copy-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.2s; }
+        .copy-btn:hover { color: var(--accent); background: rgba(59,130,246,0.1); }
+        .copy-btn svg { width: 16px; height: 16px; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-state svg { width: 64px; height: 64px; color: var(--text-muted); margin-bottom: 16px; }
+        .empty-state p { color: var(--text-secondary); }
+        
+        .loading-more { text-align: center; padding: 20px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="players-page">
+        <div class="players-header">
+            <h1 class="players-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                Игроки
+            </h1>
+            <p class="players-subtitle">Все игроки, которые крутили рулетку</p>
+        </div>
+        
+        <%
+        // Собираем статистику по игрокам
+        const playersArray = [];
+        let totalSpinsAll = 0;
+        let totalItemsAll = 0;
+        
+        Object.entries(progressData).forEach(([steamId, player]) => {
+            if (player && player.History && player.History.length > 0) {
+                const uniqueRewards = [...new Set(player.History.map(h => h.Reward))];
+                const totalItems = player.History.reduce((sum, h) => sum + (h.Amount || 1), 0);
+                totalSpinsAll += player.History.length;
+                totalItemsAll += totalItems;
+                
+                playersArray.push({
+                    steamId,
+                    spins: player.History.length,
+                    totalItems,
+                    uniqueRewards,
+                    lastRewards: player.History.slice(-6).reverse(),
+                    availableSpins: player.AvailableSpins || 0
+                });
+            }
+        });
+        
+        // Сортируем по количеству спинов
+        playersArray.sort((a, b) => b.spins - a.spins);
+        %>
+        
+        <div class="players-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value"><%= playersArray.length %></div>
+                    <div class="stat-label">Всего игроков</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 12l-4-4-4 4M12 16V8"/></svg>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value"><%= totalSpinsAll.toLocaleString() %></div>
+                    <div class="stat-label">Всего спинов</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value"><%= totalItemsAll.toLocaleString() %></div>
+                    <div class="stat-label">Предметов выдано</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value"><%= playersArray.length > 0 ? (totalSpinsAll / playersArray.length).toFixed(1) : 0 %></div>
+                    <div class="stat-label">Спинов на игрока</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="toolbar">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Поиск по Steam ID или нику...">
+            </div>
+            <select class="sort-select" id="sortSelect">
+                <option value="spins">По спинам</option>
+                <option value="items">По предметам</option>
+                <option value="unique">По уникальным</option>
+            </select>
+        </div>
+
+        <% if (playersArray.length === 0) { %>
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <p>Нет данных об игроках</p>
+        </div>
+        <% } else { %>
+        <div class="players-grid" id="playersGrid">
+            <% playersArray.forEach((player, idx) => { %>
+            <div class="player-card" data-steamid="<%= player.steamId %>" data-spins="<%= player.spins %>" data-items="<%= player.totalItems %>" data-unique="<%= player.uniqueRewards.length %>">
+                <div class="player-card-header">
+                    <img class="player-avatar loading" data-steamid="<%= player.steamId %>" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E">
+                    <div class="player-info">
+                        <div class="player-name" data-steamid="<%= player.steamId %>">Загрузка...</div>
+                        <div class="player-steamid"><%= player.steamId %></div>
+                    </div>
+                </div>
+                <div class="player-card-body">
+                    <div class="player-stats-row">
+                        <div class="player-stat">
+                            <div class="player-stat-value"><%= player.spins %></div>
+                            <div class="player-stat-label">Спинов</div>
+                        </div>
+                        <div class="player-stat">
+                            <div class="player-stat-value"><%= player.totalItems.toLocaleString() %></div>
+                            <div class="player-stat-label">Предметов</div>
+                        </div>
+                        <div class="player-stat">
+                            <div class="player-stat-value"><%= player.uniqueRewards.length %></div>
+                            <div class="player-stat-label">Уникальных</div>
+                        </div>
+                    </div>
+                    <div class="player-rewards">
+                        <% player.lastRewards.slice(0, 5).forEach(reward => { %>
+                        <div class="player-reward" title="<%= reward.Reward %>">
+                            <img src="/icons/<%= reward.Reward.toLowerCase() %>.png" onerror="this.src='/icons/rock.png'">
+                        </div>
+                        <% }); %>
+                        <% if (player.uniqueRewards.length > 5) { %>
+                        <div class="player-reward-more">+<%= player.uniqueRewards.length - 5 %></div>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="player-card-footer">
+                    <a class="player-link" href="https://steamcommunity.com/profiles/<%= player.steamId %>" target="_blank">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Steam профиль
+                    </a>
+                    <button class="copy-btn" onclick="event.stopPropagation(); copyId('<%= player.steamId %>')" title="Копировать Steam ID">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    </button>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        <% } %>
+    </div>
+
+    <script>
+        const steamCache = {};
+        const playersData = <%- JSON.stringify(playersArray) %>;
+        
+        // Загрузка Steam профилей при загрузке страницы
+        async function loadAllSteamProfiles() {
+            const steamIds = playersData.map(p => p.steamId);
+            const batchSize = 100;
+            
+            for (let i = 0; i < steamIds.length; i += batchSize) {
+                const batch = steamIds.slice(i, i + batchSize);
+                try {
+                    const res = await fetch('/api/steam/profiles?ids=' + batch.join(','));
+                    if (res.ok) {
+                        const profiles = await res.json();
+                        profiles.forEach(p => {
+                            steamCache[p.steamid] = p;
+                            updatePlayerCard(p.steamid, p);
+                        });
+                    }
+                } catch(e) {
+                    console.error('Steam API error:', e);
+                }
+            }
+        }
+        
+        function updatePlayerCard(steamId, profile) {
+            // Обновляем аватар
+            const avatars = document.querySelectorAll(`img.player-avatar[data-steamid="${steamId}"]`);
+            avatars.forEach(avatar => {
+                if (profile.avatar) {
+                    avatar.src = profile.avatar;
+                }
+                avatar.classList.remove('loading');
+            });
+            
+            // Обновляем имя
+            const names = document.querySelectorAll(`.player-name[data-steamid="${steamId}"]`);
+            names.forEach(name => {
+                name.textContent = profile.personaname || 'Player ' + steamId.slice(-6);
+            });
+        }
+        
+        // Поиск
+        document.getElementById('searchInput')?.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            document.querySelectorAll('.player-card').forEach(card => {
+                const steamId = card.dataset.steamid.toLowerCase();
+                const profile = steamCache[card.dataset.steamid];
+                const name = profile ? profile.personaname.toLowerCase() : '';
+                
+                const matches = steamId.includes(query) || name.includes(query);
+                card.style.display = matches ? '' : 'none';
+            });
+        });
+        
+        // Сортировка
+        document.getElementById('sortSelect')?.addEventListener('change', function() {
+            const grid = document.getElementById('playersGrid');
+            const cards = [...grid.querySelectorAll('.player-card')];
+            
+            cards.sort((a, b) => {
+                switch(this.value) {
+                    case 'spins': return parseInt(b.dataset.spins) - parseInt(a.dataset.spins);
+                    case 'items': return parseInt(b.dataset.items) - parseInt(a.dataset.items);
+                    case 'unique': return parseInt(b.dataset.unique) - parseInt(a.dataset.unique);
+                    default: return 0;
+                }
+            });
+            
+            cards.forEach(card => grid.appendChild(card));
+        });
+        
+        // Копирование Steam ID
+        function copyId(steamId) {
+            navigator.clipboard.writeText(steamId).then(() => {
+                showToast('Steam ID скопирован!');
+            });
+        }
+        
+        // Toast уведомление
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                ${message}
+            `;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--accent);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 10px;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+        
+        // Запускаем загрузку профилей
+        loadAllSteamProfiles();
+    </script>
+    
+    <style>
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</body>
+</html>

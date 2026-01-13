@@ -112,27 +112,91 @@ app.get('/testprogress', (req, res) => {
     });
 });
 
+// Страница игроков
+app.get('/players', (req, res) => {
+    const progressFile = path.join(__dirname, 'PlayerSpins.json');
+    let progressData = {};
+    
+    if (fs.existsSync(progressFile)) {
+        try {
+            progressData = JSON.parse(fs.readFileSync(progressFile, 'utf8'));
+        } catch (e) {
+            progressData = {};
+        }
+    }
+    
+    res.render('players', {
+        progressData,
+        items: ALL_ITEMS,
+        getItemName: getItemName
+    });
+});
+
 // API для списка предметов
 app.get('/items-list.json', (req, res) => {
     res.json(ALL_ITEMS);
 });
 
-// API для получения Steam профилей (заглушка - нужен Steam API ключ для реальных данных)
+// Steam API ключ
+const STEAM_API_KEY = '7C829374A03AB0069462812F2AB4B561';
+
+// Кэш Steam профилей (чтобы не делать много запросов)
+const steamProfilesCache = {};
+
+// API для получения Steam профилей
 app.get('/api/steam/profiles', async (req, res) => {
-    const ids = (req.query.ids || '').split(',').filter(Boolean);
+    const ids = (req.query.ids || '').split(',').filter(Boolean).slice(0, 100);
     if (ids.length === 0) {
         return res.json([]);
     }
     
-    // Заглушка - возвращаем базовую информацию
-    // Для реальных данных нужен Steam Web API ключ
-    const profiles = ids.map(steamid => ({
-        steamid: steamid,
-        personaname: 'Player ' + steamid.slice(-6),
-        avatar: `https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg`
-    }));
+    // Проверяем кэш
+    const cached = [];
+    const toFetch = [];
+    ids.forEach(id => {
+        if (steamProfilesCache[id]) {
+            cached.push(steamProfilesCache[id]);
+        } else {
+            toFetch.push(id);
+        }
+    });
     
-    res.json(profiles);
+    if (toFetch.length === 0) {
+        return res.json(cached);
+    }
+    
+    try {
+        const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${toFetch.join(',')}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.response && data.response.players) {
+            data.response.players.forEach(player => {
+                const profile = {
+                    steamid: player.steamid,
+                    personaname: player.personaname,
+                    avatar: player.avatarmedium || player.avatar,
+                    avatarfull: player.avatarfull,
+                    profileurl: player.profileurl
+                };
+                steamProfilesCache[player.steamid] = profile;
+                cached.push(profile);
+            });
+        }
+        
+        res.json(cached);
+    } catch (err) {
+        console.error('Steam API error:', err);
+        // Возвращаем заглушки для тех, кого не удалось загрузить
+        toFetch.forEach(id => {
+            cached.push({
+                steamid: id,
+                personaname: 'Player ' + id.slice(-6),
+                avatar: ''
+            });
+        });
+        res.json(cached);
+    }
 });
 
 // API для полной информации о предмете
