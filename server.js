@@ -79,6 +79,19 @@ const RUST_CONTAINERS = [
 
 // ============ ROUTES ============
 
+// Секретная страница экспорта иконок (не показывается нигде)
+app.get('/generateurl', (req, res) => {
+    // Определяем базовый URL
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+    
+    res.render('secret-icons', {
+        items: ALL_ITEMS,
+        baseUrl: baseUrl
+    });
+});
+
 // Скрытая страница статистики прогресса (не показывается в меню)
 app.get('/testprogress', (req, res) => {
     const progressFile = path.join(__dirname, 'PlayerSpins.json');
