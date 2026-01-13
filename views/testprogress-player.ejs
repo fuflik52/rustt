@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title><%= playerName %> - Player Profile</title>
+    <style>
+        .player-page { padding: 40px; max-width: 1200px; margin: 0 auto; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text); border-radius: 8px; text-decoration: none; font-size: 13px; transition: all 0.2s; margin-bottom: 24px; }
+        .back-btn:hover { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+        .back-btn svg { width: 16px; height: 16px; }
+        
+        .player-profile { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+        .profile-header { display: flex; align-items: center; gap: 20px; padding: 24px; background: var(--bg-tertiary); flex-wrap: wrap; }
+        .profile-avatar { width: 80px; height: 80px; border-radius: 16px; object-fit: cover; background: var(--bg-secondary); border: 3px solid var(--accent); }
+        .profile-avatar.loading { background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .profile-info { flex: 1; min-width: 200px; }
+        .profile-name { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .profile-steamid { font-size: 13px; color: var(--text-muted); font-family: monospace; display: flex; align-items: center; gap: 8px; }
+        .profile-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .profile-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text); text-decoration: none; }
+        .profile-btn:hover { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+        .profile-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+        .profile-btn.primary:hover { background: var(--accent-hover); }
+        .profile-btn svg { width: 16px; height: 16px; }
+        
+        .profile-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; padding: 24px; }
+        .profile-stat { text-align: center; padding: 16px; background: var(--bg-tertiary); border-radius: 12px; }
+        .profile-stat-value { font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .profile-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .section-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .section-title svg { width: 20px; height: 20px; color: var(--accent); }
+        
+        .loot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .loot-item { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; transition: all 0.2s; }
+        .loot-item:hover { border-color: var(--accent); }
+        .loot-icon { width: 48px; height: 48px; border-radius: 8px; object-fit: contain; background: var(--bg-tertiary); padding: 6px; flex-shrink: 0; }
+        .loot-info { flex: 1; min-width: 0; }
+        .loot-name { font-weight: 600; color: var(--text); font-size: 14px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .loot-shortname { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+        .loot-stats { display: flex; gap: 8px; }
+        .loot-stat { padding: 6px 10px; background: var(--bg-tertiary); border-radius: 6px; text-align: center; }
+        .loot-stat-value { font-weight: 700; color: var(--accent); font-size: 14px; }
+        .loot-stat-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+        
+        .history-section { margin-top: 32px; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+        .history-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; }
+        .history-icon { width: 40px; height: 40px; border-radius: 8px; object-fit: contain; background: var(--bg-tertiary); padding: 4px; flex-shrink: 0; }
+        .history-info { flex: 1; }
+        .history-name { font-weight: 500; color: var(--text); font-size: 14px; }
+        .history-date { font-size: 11px; color: var(--text-muted); }
+        .history-amount { font-weight: 700; color: var(--accent); font-size: 16px; }
+        
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+        
+        .toolbar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .search-input { flex: 1; min-width: 200px; max-width: 300px; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .sort-select { padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; cursor: pointer; }
+        
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .tab-btn:hover { border-color: var(--accent); }
+        .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="player-page">
+        <a href="/testprogress/players" class="back-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Назад к игрокам
+        </a>
+        
+        <div class="player-profile">
+            <div class="profile-header">
+                <img class="profile-avatar loading" id="profileAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E">
+                <div class="profile-info">
+                    <div class="profile-name" id="profileName"><%= playerName %></div>
+                    <div class="profile-steamid">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <%= steamId %>
+                        <button onclick="copyId()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;" title="Копировать">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <a class="profile-btn primary" href="https://steamcommunity.com/profiles/<%= steamId %>" target="_blank">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Steam профиль
+                    </a>
+                </div>
+            </div>
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <div class="profile-stat-value"><%= playerData.totalSpins %></div>
+                    <div class="profile-stat-label">Всего спинов</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value"><%= playerData.totalItems.toLocaleString() %></div>
+                    <div class="profile-stat-label">Предметов получено</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value"><%= playerData.uniqueCount %></div>
+                    <div class="profile-stat-label">Уникальных наград</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value"><%= playerData.availableSpins %></div>
+                    <div class="profile-stat-label">Доступно спинов</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('loot')">Весь лут</button>
+            <button class="tab-btn" onclick="showTab('history')">История (<%= playerData.history.length %>)</button>
+        </div>
+        
+        <div class="tab-content active" id="tab-loot">
+            <div class="toolbar">
+                <input type="text" class="search-input" id="lootSearch" placeholder="Поиск предмета...">
+                <select class="sort-select" id="lootSort">
+                    <option value="count">По количеству</option>
+                    <option value="total">По сумме</option>
+                    <option value="name">По названию</option>
+                </select>
+            </div>
+            
+            <% if (Object.keys(playerData.aggregated).length === 0) { %>
+            <div class="empty-state">Нет данных о луте</div>
+            <% } else { %>
+            <div class="loot-grid" id="lootGrid">
+                <% Object.entries(playerData.aggregated).sort((a, b) => b[1].count - a[1].count).forEach(([shortname, data]) => { %>
+                <div class="loot-item" data-shortname="<%= shortname.toLowerCase() %>" data-name="<%= data.name.toLowerCase() %>" data-count="<%= data.count %>" data-total="<%= data.total %>">
+                    <img class="loot-icon" src="/icons/<%= shortname.toLowerCase() %>.png" onerror="this.src='/icons/rock.png'">
+                    <div class="loot-info">
+                        <div class="loot-name"><%= data.name %></div>
+                        <div class="loot-shortname"><%= shortname %></div>
+                    </div>
+                    <div class="loot-stats">
+                        <div class="loot-stat">
+                            <div class="loot-stat-value"><%= data.count %></div>
+                            <div class="loot-stat-label">Раз</div>
+                        </div>
+                        <div class="loot-stat">
+                            <div class="loot-stat-value"><%= data.total.toLocaleString() %></div>
+                            <div class="loot-stat-label">Всего</div>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+            <% } %>
+        </div>
+        
+        <div class="tab-content" id="tab-history">
+            <% if (playerData.history.length === 0) { %>
+            <div class="empty-state">Нет истории</div>
+            <% } else { %>
+            <div class="history-list">
+                <% playerData.history.slice().reverse().forEach(entry => { %>
+                <div class="history-item">
+                    <img class="history-icon" src="/icons/<%= entry.shortname.toLowerCase() %>.png" onerror="this.src='/icons/rock.png'">
+                    <div class="history-info">
+                        <div class="history-name"><%= entry.name %></div>
+                        <div class="history-date"><%= entry.date %></div>
+                    </div>
+                    <div class="history-amount">×<%= entry.amount.toLocaleString() %></div>
+                </div>
+                <% }); %>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        const STEAM_ID = '<%= steamId %>';
+        
+        // Загрузка Steam профиля
+        async function loadSteamProfile() {
+            try {
+                const res = await fetch('/api/steam/profiles?ids=' + STEAM_ID);
+                if (res.ok) {
+                    const profiles = await res.json();
+                    if (profiles[0]) {
+                        const avatar = document.getElementById('profileAvatar');
+                        const name = document.getElementById('profileName');
+                        if (profiles[0].avatar) avatar.src = profiles[0].avatar;
+                        avatar.classList.remove('loading');
+                        if (profiles[0].personaname) name.textContent = profiles[0].personaname;
+                    }
+                }
+            } catch(e) {
+                document.getElementById('profileAvatar').classList.remove('loading');
+            }
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.querySelector('.tab-btn[onclick*="' + tab + '"]').classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+        
+        function copyId() {
+            navigator.clipboard.writeText(STEAM_ID).then(() => {
+                showToast('Steam ID скопирован!');
+            });
+        }
+        
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' + msg;
+            t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--accent);color:white;padding:12px 20px;border-radius:10px;font-size:13px;display:flex;align-items:center;gap:8px;z-index:1001;animation:slideIn .3s';
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2000);
+        }
+        
+        // Поиск и сортировка лута
+        document.getElementById('lootSearch')?.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            document.querySelectorAll('.loot-item').forEach(item => {
+                const match = item.dataset.shortname.includes(q) || item.dataset.name.includes(q);
+                item.style.display = match ? '' : 'none';
+            });
+        });
+        
+        document.getElementById('lootSort')?.addEventListener('change', function() {
+            const grid = document.getElementById('lootGrid');
+            const items = [...grid.querySelectorAll('.loot-item')];
+            items.sort((a, b) => {
+                switch(this.value) {
+                    case 'count': return parseInt(b.dataset.count) - parseInt(a.dataset.count);
+                    case 'total': return parseInt(b.dataset.total) - parseInt(a.dataset.total);
+                    case 'name': return a.dataset.name.localeCompare(b.dataset.name);
+                    default: return 0;
+                }
+            });
+            items.forEach(item => grid.appendChild(item));
+        });
+        
+        loadSteamProfile();
+    </script>
+    <style>@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+</body>
+</html>

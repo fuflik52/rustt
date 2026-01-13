@@ -112,6 +112,83 @@ app.get('/testprogress', (req, res) => {
     });
 });
 
+// Страница всех игроков (testprogress/players)
+app.get('/testprogress/players', (req, res) => {
+    const progressFile = path.join(__dirname, 'PlayerSpins.json');
+    let progressData = {};
+    
+    if (fs.existsSync(progressFile)) {
+        try {
+            progressData = JSON.parse(fs.readFileSync(progressFile, 'utf8'));
+        } catch (e) {
+            progressData = {};
+        }
+    }
+    
+    res.render('testprogress-players', {
+        progressData,
+        items: ALL_ITEMS,
+        getItemName: getItemName
+    });
+});
+
+// Страница профиля игрока (testprogress/player/:steamId)
+app.get('/testprogress/player/:steamId', (req, res) => {
+    const steamId = req.params.steamId;
+    const progressFile = path.join(__dirname, 'PlayerSpins.json');
+    let progressData = {};
+    
+    if (fs.existsSync(progressFile)) {
+        try {
+            progressData = JSON.parse(fs.readFileSync(progressFile, 'utf8'));
+        } catch (e) {
+            progressData = {};
+        }
+    }
+    
+    const player = progressData[steamId];
+    if (!player || !player.History || player.History.length === 0) {
+        return res.redirect('/testprogress/players');
+    }
+    
+    // Агрегируем данные игрока
+    const aggregated = {};
+    let totalItems = 0;
+    const history = [];
+    
+    player.History.forEach(entry => {
+        const shortname = entry.Reward;
+        const amount = entry.Amount || 1;
+        const name = getItemName(shortname);
+        totalItems += amount;
+        
+        history.push({ shortname, amount, date: entry.Date, name });
+        
+        if (!aggregated[shortname]) {
+            aggregated[shortname] = { count: 0, total: 0, name };
+        }
+        aggregated[shortname].count++;
+        aggregated[shortname].total += amount;
+    });
+    
+    const playerData = {
+        totalSpins: player.History.length,
+        totalItems,
+        uniqueCount: Object.keys(aggregated).length,
+        availableSpins: player.AvailableSpins || 0,
+        aggregated,
+        history
+    };
+    
+    res.render('testprogress-player', {
+        steamId,
+        playerName: 'Player ' + steamId.slice(-6),
+        playerData,
+        items: ALL_ITEMS,
+        getItemName: getItemName
+    });
+});
+
 // Страница игроков
 app.get('/players', (req, res) => {
     const progressFile = path.join(__dirname, 'PlayerSpins.json');
