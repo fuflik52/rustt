@@ -10,10 +10,10 @@
         .progress-subtitle { color: var(--text-secondary); font-size: 14px; }
         .progress-empty { text-align: center; padding: 80px 40px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); }
         .progress-empty-icon { width: 64px; height: 64px; margin: 0 auto 16px; color: var(--text-muted); }
-        .progress-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
-        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
-        .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-        .stat-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .progress-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; overflow: hidden; }
+        .stat-value { font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 4px; word-break: break-all; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .toolbar { display: flex; gap: 12px; margin-bottom: 20px; }
         .search-input { flex: 1; min-width: 200px; max-width: 400px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
         .search-input:focus { outline: none; border-color: var(--accent); }
