@@ -117,6 +117,24 @@ app.get('/items-list.json', (req, res) => {
     res.json(ALL_ITEMS);
 });
 
+// API для получения Steam профилей (заглушка - нужен Steam API ключ для реальных данных)
+app.get('/api/steam/profiles', async (req, res) => {
+    const ids = (req.query.ids || '').split(',').filter(Boolean);
+    if (ids.length === 0) {
+        return res.json([]);
+    }
+    
+    // Заглушка - возвращаем базовую информацию
+    // Для реальных данных нужен Steam Web API ключ
+    const profiles = ids.map(steamid => ({
+        steamid: steamid,
+        personaname: 'Player ' + steamid.slice(-6),
+        avatar: `https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg`
+    }));
+    
+    res.json(profiles);
+});
+
 // API для полной информации о предмете
 app.get('/api/item/:shortname', (req, res) => {
     const shortname = req.params.shortname;

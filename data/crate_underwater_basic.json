@@ -1,0 +1,119 @@
+{
+  "enabled": true,
+  "amountLoot": {
+    "minAmount": 1,
+    "maxAmount": 3
+  },
+  "lootPresets": [
+    {
+      "shortname": "rifle.ak",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.ak.jungle",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.ak.med",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.m39",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.lr300.space",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.lr300",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.l96",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.bolt",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.ak.diver",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    },
+    {
+      "shortname": "rifle.ak.ice",
+      "displayName": "",
+      "rareDrop": 100,
+      "isBlueprint": false,
+      "amount": {
+        "minAmount": 1,
+        "maxAmount": 1
+      },
+      "skinID": 0
+    }
+  ]
+}

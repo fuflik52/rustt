@@ -8,14 +8,8 @@
         .progress-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
         .progress-title { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
         .progress-subtitle { color: var(--text-secondary); font-size: 14px; }
-        .view-toggle { display: flex; gap: 4px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 4px; }
-        .view-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: none; background: transparent; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
-        .view-btn:hover { color: var(--text); background: var(--bg-tertiary); }
-        .view-btn.active { background: var(--accent); color: white; }
-        .view-btn svg { width: 18px; height: 18px; }
         .progress-empty { text-align: center; padding: 80px 40px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); }
         .progress-empty-icon { width: 64px; height: 64px; margin: 0 auto 16px; color: var(--text-muted); }
-        .progress-empty-text { font-size: 16px; color: var(--text-secondary); }
         .progress-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
         .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
         .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
@@ -23,29 +17,75 @@
         .toolbar { display: flex; gap: 12px; margin-bottom: 20px; }
         .search-input { flex: 1; min-width: 200px; max-width: 400px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
         .search-input:focus { outline: none; border-color: var(--accent); }
-        .search-input::placeholder { color: var(--text-muted); }
-        .progress-table-wrapper { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-        .progress-table { width: 100%; border-collapse: collapse; }
-        .progress-table th, .progress-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); }
-        .progress-table th { background: var(--bg-tertiary); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
-        .progress-table tr:last-child td { border-bottom: none; }
-        .progress-table tr:hover td { background: rgba(59, 130, 246, 0.05); }
-        .item-cell { display: flex; align-items: center; gap: 12px; }
-        .item-icon { width: 40px; height: 40px; object-fit: contain; background: var(--bg-tertiary); border-radius: 6px; padding: 4px; }
-        .item-name { font-weight: 500; color: var(--text); }
-        .item-shortname { font-size: 12px; color: var(--text-muted); font-family: monospace; }
-        .amount-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; padding: 4px 10px; background: var(--accent); color: white; border-radius: 6px; font-weight: 600; font-size: 14px; }
-        .count-badge { background: var(--bg-tertiary); color: var(--text); }
-        .progress-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-        .grid-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.2s; }
-        .grid-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-        .grid-card .item-icon { width: 64px; height: 64px; margin-bottom: 12px; }
-        .grid-card .item-name { font-size: 14px; margin-bottom: 4px; }
-        .grid-card .item-shortname { margin-bottom: 12px; }
-        .grid-card-stats { display: flex; gap: 8px; width: 100%; justify-content: center; }
-        .grid-stat { display: flex; flex-direction: column; align-items: center; padding: 8px 12px; background: var(--bg-tertiary); border-radius: 6px; flex: 1; }
-        .grid-stat-value { font-weight: 700; color: var(--accent); font-size: 16px; }
-        .grid-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+
+        /* Prize Cards */
+        .prizes-grid { display: flex; flex-direction: column; gap: 12px; }
+        .prize-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.2s; }
+        .prize-card:hover { border-color: var(--accent); }
+        .prize-header { display: flex; align-items: center; gap: 16px; padding: 16px 20px; cursor: pointer; transition: background 0.2s; }
+        .prize-header:hover { background: var(--bg-tertiary); }
+        .prize-icon { width: 48px; height: 48px; object-fit: contain; background: var(--bg-tertiary); border-radius: 8px; padding: 6px; flex-shrink: 0; }
+        .prize-info { flex: 1; min-width: 0; }
+        .prize-name { font-weight: 600; color: var(--text); font-size: 15px; margin-bottom: 2px; }
+        .prize-shortname { font-size: 12px; color: var(--text-muted); font-family: monospace; }
+        .prize-stats { display: flex; gap: 12px; align-items: center; }
+        .prize-stat { display: flex; flex-direction: column; align-items: center; padding: 8px 14px; background: var(--bg-tertiary); border-radius: 8px; min-width: 65px; }
+        .prize-stat-value { font-weight: 700; color: var(--accent); font-size: 16px; }
+        .prize-stat-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+        .prize-toggle { width: 36px; height: 36px; border-radius: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.2s; flex-shrink: 0; }
+        .prize-toggle svg { width: 18px; height: 18px; transition: transform 0.3s; }
+        .prize-card.expanded .prize-toggle svg { transform: rotate(180deg); }
+        .prize-card.expanded .prize-toggle { background: var(--accent); color: white; border-color: var(--accent); }
+        
+        /* Players List */
+        .prize-players { display: none; border-top: 1px solid var(--border); background: var(--bg-tertiary); max-height: 400px; overflow-y: auto; }
+        .prize-card.expanded .prize-players { display: block; }
+        .players-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; }
+        .player-chip { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .player-chip:hover { border-color: var(--accent); background: rgba(59, 130, 246, 0.1); transform: translateY(-1px); }
+        .player-chip-avatar { width: 28px; height: 28px; border-radius: 6px; background: var(--bg-tertiary); object-fit: cover; }
+        .player-chip-info { display: flex; flex-direction: column; }
+        .player-chip-name { font-size: 12px; font-weight: 500; color: var(--text); max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .player-chip-amount { font-size: 10px; color: var(--accent); font-weight: 600; }
+        .no-players { padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+        /* Player Modal */
+        .player-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .player-modal-overlay.active { opacity: 1; visibility: visible; }
+        .player-modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; width: 400px; max-width: 90vw; max-height: 80vh; overflow: hidden; transform: scale(0.9) translateY(20px); transition: transform 0.3s; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        .player-modal-overlay.active .player-modal { transform: scale(1) translateY(0); }
+        .player-modal-header { display: flex; align-items: center; gap: 16px; padding: 20px; border-bottom: 1px solid var(--border); background: var(--bg-tertiary); }
+        .player-modal-avatar { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: var(--bg-secondary); border: 2px solid var(--accent); }
+        .player-modal-info { flex: 1; }
+        .player-modal-name { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .player-modal-steamid { font-size: 12px; color: var(--text-muted); font-family: monospace; display: flex; align-items: center; gap: 6px; }
+        .player-modal-close { width: 36px; height: 36px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .player-modal-close:hover { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #ef4444; }
+        .player-modal-close svg { width: 18px; height: 18px; }
+        .player-modal-body { padding: 20px; overflow-y: auto; max-height: 400px; }
+        .player-modal-section { margin-bottom: 20px; }
+        .player-modal-section:last-child { margin-bottom: 0; }
+        .player-modal-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .player-modal-section-title svg { width: 14px; height: 14px; }
+        .player-modal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .player-modal-stat { background: var(--bg-tertiary); border-radius: 10px; padding: 14px; text-align: center; }
+        .player-modal-stat-value { font-size: 22px; font-weight: 700; color: var(--accent); }
+        .player-modal-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
+        .player-modal-actions { display: flex; gap: 10px; }
+        .player-modal-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text); }
+        .player-modal-btn:hover { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+        .player-modal-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+        .player-modal-btn.primary:hover { background: var(--accent-hover); }
+        .player-modal-btn svg { width: 16px; height: 16px; }
+        .player-history-item { display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px; }
+        .player-history-item:last-child { margin-bottom: 0; }
+        .player-history-icon { width: 36px; height: 36px; border-radius: 6px; object-fit: contain; background: var(--bg-secondary); padding: 4px; }
+        .player-history-info { flex: 1; }
+        .player-history-name { font-size: 13px; font-weight: 500; color: var(--text); }
+        .player-history-date { font-size: 11px; color: var(--text-muted); }
+        .player-history-amount { font-weight: 600; color: var(--accent); font-size: 14px; }
+        .loading-avatar { background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body>
@@ -62,49 +102,44 @@
                 </h1>
                 <p class="progress-subtitle">Статистика выпавших предметов из рулетки</p>
             </div>
-            <div class="view-toggle">
-                <button class="view-btn active" data-view="table" title="Таблица">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-                <button class="view-btn" data-view="grid" title="Сетка">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                    </svg>
-                </button>
-            </div>
         </div>
         
         <% 
+        // Агрегируем данные
         const aggregated = {};
+        const playerStats = {};
         let totalSpins = 0;
         let totalPlayers = 0;
-        Object.values(progressData).forEach(player => {
-            if (player && player.History && Array.isArray(player.History)) {
+        
+        Object.entries(progressData).forEach(([steamId, player]) => {
+            if (player && player.History && Array.isArray(player.History) && player.History.length > 0) {
                 totalPlayers++;
+                playerStats[steamId] = { history: [], totalSpins: 0, totalItems: 0 };
+                
                 player.History.forEach(entry => {
                     const shortname = entry.Reward;
                     const amount = entry.Amount || 1;
                     totalSpins++;
+                    
+                    playerStats[steamId].totalSpins++;
+                    playerStats[steamId].totalItems += amount;
+                    playerStats[steamId].history.push({ shortname, amount, date: entry.Date });
+                    
                     if (!aggregated[shortname]) {
-                        aggregated[shortname] = { count: 0, totalAmount: 0 };
+                        aggregated[shortname] = { count: 0, totalAmount: 0, players: [] };
                     }
                     aggregated[shortname].count++;
                     aggregated[shortname].totalAmount += amount;
+                    aggregated[shortname].players.push({ steamId, amount, date: entry.Date });
                 });
             }
         });
+        
         const entries = Object.entries(aggregated);
         const totalUniqueItems = entries.length;
         const sortedEntries = entries.sort((a, b) => b[1].count - a[1].count);
         %>
-        
+
         <% if (totalUniqueItems === 0) { %>
         <div class="progress-empty">
             <svg class="progress-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -122,65 +157,230 @@
         </div>
         
         <div class="toolbar">
-            <input type="text" class="search-input" id="searchInput" placeholder="Поиск...">
+            <input type="text" class="search-input" id="searchInput" placeholder="Поиск по названию...">
         </div>
         
-        <div id="tableView" class="progress-table-wrapper">
-            <table class="progress-table" id="progressTable">
-                <thead><tr><th>Предмет</th><th>Shortname</th><th>Выпало раз</th><th>Всего</th></tr></thead>
-                <tbody>
-                    <% sortedEntries.forEach(([shortname, data]) => { const itemName = getItemName(shortname); %>
-                    <tr data-shortname="<%= shortname.toLowerCase() %>" data-name="<%= itemName.toLowerCase() %>">
-                        <td><div class="item-cell"><img src="/icons/<%= shortname.toLowerCase() %>.png" class="item-icon" onerror="this.src='/icons/rock.png'"><span class="item-name"><%= itemName %></span></div></td>
-                        <td><span class="item-shortname"><%= shortname %></span></td>
-                        <td><span class="amount-badge count-badge"><%= data.count %></span></td>
-                        <td><span class="amount-badge"><%= data.totalAmount.toLocaleString() %></span></td>
-                    </tr>
-                    <% }) %>
-                </tbody>
-            </table>
-        </div>
-        
-        <div id="gridView" class="progress-grid" style="display:none;">
-            <% sortedEntries.forEach(([shortname, data]) => { const itemName = getItemName(shortname); %>
-            <div class="grid-card" data-shortname="<%= shortname.toLowerCase() %>" data-name="<%= itemName.toLowerCase() %>">
-                <img src="/icons/<%= shortname.toLowerCase() %>.png" class="item-icon" onerror="this.src='/icons/rock.png'">
-                <span class="item-name"><%= itemName %></span>
-                <span class="item-shortname"><%= shortname %></span>
-                <div class="grid-card-stats">
-                    <div class="grid-stat"><span class="grid-stat-value"><%= data.count %></span><span class="grid-stat-label">Раз</span></div>
-                    <div class="grid-stat"><span class="grid-stat-value"><%= data.totalAmount.toLocaleString() %></span><span class="grid-stat-label">Всего</span></div>
+        <div class="prizes-grid" id="prizesGrid">
+            <% sortedEntries.forEach(([shortname, data]) => { 
+                const itemName = getItemName(shortname);
+                const uniquePlayers = [...new Map(data.players.map(p => [p.steamId, p])).values()];
+            %>
+            <div class="prize-card" data-shortname="<%= shortname.toLowerCase() %>" data-name="<%= itemName.toLowerCase() %>">
+                <div class="prize-header" onclick="togglePrize(this)">
+                    <img src="/icons/<%= shortname.toLowerCase() %>.png" class="prize-icon" onerror="this.src='/icons/rock.png'">
+                    <div class="prize-info">
+                        <div class="prize-name"><%= itemName %></div>
+                        <div class="prize-shortname"><%= shortname %></div>
+                    </div>
+                    <div class="prize-stats">
+                        <div class="prize-stat"><span class="prize-stat-value"><%= data.count %></span><span class="prize-stat-label">Выпало</span></div>
+                        <div class="prize-stat"><span class="prize-stat-value"><%= data.totalAmount.toLocaleString() %></span><span class="prize-stat-label">Всего</span></div>
+                        <div class="prize-stat"><span class="prize-stat-value"><%= uniquePlayers.length %></span><span class="prize-stat-label">Игроков</span></div>
+                    </div>
+                    <div class="prize-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                </div>
+                <div class="prize-players">
+                    <div class="players-list">
+                        <% uniquePlayers.slice(0, 30).forEach(player => { %>
+                        <div class="player-chip" onclick="openPlayerModal('<%= player.steamId %>')">
+                            <img class="player-chip-avatar loading-avatar" data-steamid="<%= player.steamId %>" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='1.5'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E">
+                            <div class="player-chip-info">
+                                <span class="player-chip-name" data-steamid="<%= player.steamId %>">...</span>
+                                <span class="player-chip-amount">×<%= player.amount %></span>
+                            </div>
+                        </div>
+                        <% }); %>
+                        <% if (uniquePlayers.length > 30) { %>
+                        <div class="no-players" style="width:100%">... и ещё <%= uniquePlayers.length - 30 %> игроков</div>
+                        <% } %>
+                    </div>
                 </div>
             </div>
-            <% }) %>
+            <% }); %>
         </div>
         <% } %>
     </div>
-    
+
+    <!-- Player Modal -->
+    <div class="player-modal-overlay" id="playerModal" onclick="if(event.target===this)closePlayerModal()">
+        <div class="player-modal">
+            <div class="player-modal-header">
+                <img class="player-modal-avatar loading-avatar" id="modalAvatar" src="">
+                <div class="player-modal-info">
+                    <div class="player-modal-name" id="modalName">Загрузка...</div>
+                    <div class="player-modal-steamid">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span id="modalSteamId">-</span>
+                    </div>
+                </div>
+                <button class="player-modal-close" onclick="closePlayerModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="player-modal-body">
+                <div class="player-modal-section">
+                    <div class="player-modal-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        Статистика
+                    </div>
+                    <div class="player-modal-stats">
+                        <div class="player-modal-stat"><div class="player-modal-stat-value" id="modalSpins">0</div><div class="player-modal-stat-label">Спинов</div></div>
+                        <div class="player-modal-stat"><div class="player-modal-stat-value" id="modalItems">0</div><div class="player-modal-stat-label">Предметов</div></div>
+                        <div class="player-modal-stat"><div class="player-modal-stat-value" id="modalUnique">0</div><div class="player-modal-stat-label">Уникальных</div></div>
+                    </div>
+                </div>
+                <div class="player-modal-section">
+                    <div class="player-modal-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Последние награды
+                    </div>
+                    <div id="modalHistory"></div>
+                </div>
+                <div class="player-modal-section">
+                    <div class="player-modal-actions">
+                        <button class="player-modal-btn" onclick="copySteamId()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                            Копировать ID
+                        </button>
+                        <a class="player-modal-btn primary" id="modalSteamLink" href="#" target="_blank">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Steam профиль
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const isGrid = this.dataset.view === 'grid';
-                document.getElementById('tableView').style.display = isGrid ? 'none' : 'block';
-                document.getElementById('gridView').style.display = isGrid ? 'grid' : 'none';
-                localStorage.setItem('spinsView', this.dataset.view);
-            });
-        });
-        if (localStorage.getItem('spinsView') === 'grid') {
-            document.getElementById('tableView').style.display = 'none';
-            document.getElementById('gridView').style.display = 'grid';
-            document.querySelector('[data-view="grid"]')?.classList.add('active');
-            document.querySelector('[data-view="table"]')?.classList.remove('active');
+        const PLAYER_STATS = <%- JSON.stringify(typeof playerStats !== 'undefined' ? playerStats : {}) %>;
+        const ITEMS = <%- JSON.stringify(typeof items !== 'undefined' ? items : []) %>;
+        const steamCache = {};
+        let currentSteamId = null;
+        
+        function getItemName(shortname) {
+            const item = ITEMS.find(i => i.shortname === shortname);
+            return item ? item.name : shortname;
         }
+        
+        function togglePrize(header) {
+            const card = header.closest('.prize-card');
+            card.classList.toggle('expanded');
+            if (card.classList.contains('expanded')) loadSteamProfiles(card);
+        }
+        
+        async function loadSteamProfiles(card) {
+            const chips = card.querySelectorAll('.player-chip');
+            const steamIds = [...new Set([...chips].map(c => c.querySelector('[data-steamid]').dataset.steamid))];
+            const toLoad = steamIds.filter(id => !steamCache[id]);
+            
+            if (toLoad.length > 0) {
+                try {
+                    const res = await fetch('/api/steam/profiles?ids=' + toLoad.join(','));
+                    if (res.ok) {
+                        const profiles = await res.json();
+                        profiles.forEach(p => steamCache[p.steamid] = p);
+                    }
+                } catch(e) {}
+            }
+            
+            chips.forEach(chip => {
+                const steamId = chip.querySelector('[data-steamid]').dataset.steamid;
+                const avatar = chip.querySelector('.player-chip-avatar');
+                const name = chip.querySelector('.player-chip-name');
+                
+                if (steamCache[steamId]) {
+                    avatar.src = steamCache[steamId].avatar || avatar.src;
+                    avatar.classList.remove('loading-avatar');
+                    name.textContent = steamCache[steamId].personaname || steamId.slice(-8);
+                } else {
+                    name.textContent = steamId.slice(-8);
+                    avatar.classList.remove('loading-avatar');
+                }
+            });
+        }
+        
+        async function openPlayerModal(steamId) {
+            currentSteamId = steamId;
+            const modal = document.getElementById('playerModal');
+            const stats = PLAYER_STATS[steamId] || { history: [], totalSpins: 0, totalItems: 0 };
+            
+            // Показываем модалку
+            modal.classList.add('active');
+            document.getElementById('modalSteamId').textContent = steamId;
+            document.getElementById('modalSteamLink').href = 'https://steamcommunity.com/profiles/' + steamId;
+            document.getElementById('modalSpins').textContent = stats.totalSpins;
+            document.getElementById('modalItems').textContent = stats.totalItems.toLocaleString();
+            document.getElementById('modalUnique').textContent = [...new Set(stats.history.map(h => h.shortname))].length;
+            
+            // История
+            const historyHtml = stats.history.slice(-10).reverse().map(h => `
+                <div class="player-history-item">
+                    <img class="player-history-icon" src="/icons/${h.shortname.toLowerCase()}.png" onerror="this.src='/icons/rock.png'">
+                    <div class="player-history-info">
+                        <div class="player-history-name">${getItemName(h.shortname)}</div>
+                        <div class="player-history-date">${h.date}</div>
+                    </div>
+                    <div class="player-history-amount">×${h.amount.toLocaleString()}</div>
+                </div>
+            `).join('');
+            document.getElementById('modalHistory').innerHTML = historyHtml || '<div class="no-players">Нет истории</div>';
+            
+            // Загружаем профиль Steam
+            const avatar = document.getElementById('modalAvatar');
+            const name = document.getElementById('modalName');
+            avatar.classList.add('loading-avatar');
+            
+            if (steamCache[steamId]) {
+                avatar.src = steamCache[steamId].avatar || '';
+                avatar.classList.remove('loading-avatar');
+                name.textContent = steamCache[steamId].personaname || 'Player ' + steamId.slice(-6);
+            } else {
+                name.textContent = 'Player ' + steamId.slice(-6);
+                try {
+                    const res = await fetch('/api/steam/profiles?ids=' + steamId);
+                    if (res.ok) {
+                        const profiles = await res.json();
+                        if (profiles[0]) {
+                            steamCache[steamId] = profiles[0];
+                            avatar.src = profiles[0].avatar || '';
+                            name.textContent = profiles[0].personaname || 'Player ' + steamId.slice(-6);
+                        }
+                    }
+                } catch(e) {}
+                avatar.classList.remove('loading-avatar');
+            }
+        }
+        
+        function closePlayerModal() {
+            document.getElementById('playerModal').classList.remove('active');
+            currentSteamId = null;
+        }
+        
+        function copySteamId() {
+            if (!currentSteamId) return;
+            navigator.clipboard.writeText(currentSteamId).then(() => showToast('Steam ID скопирован'));
+        }
+        
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>${msg}`;
+            t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--accent);color:white;padding:12px 20px;border-radius:10px;font-size:13px;display:flex;align-items:center;gap:8px;z-index:1001;animation:slideIn .3s';
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2000);
+        }
+        
         document.getElementById('searchInput')?.addEventListener('input', function() {
             const q = this.value.toLowerCase().trim();
-            document.querySelectorAll('#progressTable tbody tr, .grid-card').forEach(el => {
-                const match = el.dataset.shortname.includes(q) || el.dataset.name.includes(q);
-                el.style.display = match ? '' : 'none';
+            document.querySelectorAll('.prize-card').forEach(c => {
+                c.style.display = (c.dataset.shortname.includes(q) || c.dataset.name.includes(q)) ? '' : 'none';
             });
         });
+        
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayerModal(); });
     </script>
+    <style>@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
 </body>
 </html>
