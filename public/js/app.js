@@ -508,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initViewMode();
     if (typeof CONTAINER_NAME !== 'undefined' && CONTAINER_NAME) {
         initLocalState();
+        checkClipboard();
     }
 });
 
@@ -732,6 +733,49 @@ function filterLootTable() {
 // ============ ITEM ACTIONS (legacy support) ============
 function updateItem(index, field, value) { updateItemLocal(index, field, value); }
 function removeItem(index) { removeItemLocal(index); }
+
+// ============ COPY/PASTE ITEM ============
+const CLIPBOARD_KEY = 'lootEditorClipboard';
+
+function copyItem(index) {
+    if (index < 0 || index >= localItems.length) return;
+    
+    const item = JSON.parse(JSON.stringify(localItems[index]));
+    localStorage.setItem(CLIPBOARD_KEY, JSON.stringify(item));
+    
+    // Показать кнопку вставки
+    const pasteBtn = document.getElementById('pasteBtn');
+    if (pasteBtn) pasteBtn.style.display = 'flex';
+    
+    showToast(`Скопировано: ${getItemDisplayName(item.shortname)}`);
+}
+
+function pasteItem() {
+    const clipboardData = localStorage.getItem(CLIPBOARD_KEY);
+    if (!clipboardData) {
+        showToast('Буфер обмена пуст', 'error');
+        return;
+    }
+    
+    try {
+        const item = JSON.parse(clipboardData);
+        localItems.push(item);
+        hasChanges = true;
+        renderItems();
+        showToast(`Вставлено: ${getItemDisplayName(item.shortname)}`);
+    } catch (e) {
+        showToast('Ошибка вставки', 'error');
+    }
+}
+
+// Проверить буфер при загрузке
+function checkClipboard() {
+    const clipboardData = localStorage.getItem(CLIPBOARD_KEY);
+    const pasteBtn = document.getElementById('pasteBtn');
+    if (pasteBtn && clipboardData) {
+        pasteBtn.style.display = 'flex';
+    }
+}
 
 // ============ QUICK PRESETS ============
 function openPresetsModal() {

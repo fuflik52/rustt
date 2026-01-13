@@ -298,9 +298,14 @@ body::after {
 .loot-input::-webkit-outer-spin-button, .loot-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .loot-input:focus { outline: none; border-color: var(--accent); background: var(--bg-secondary); }
 .loot-skin { width: 110px; }
+.loot-copy { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s; }
+.loot-copy:hover { color: var(--accent); background: rgba(59, 130, 246, 0.1); }
+.loot-copy svg { width: 16px; height: 16px; }
 .loot-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s; }
 .loot-delete:hover { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
 .loot-delete svg { width: 16px; height: 16px; }
+.btn-paste { background: rgba(16, 185, 129, 0.1) !important; border-color: var(--success) !important; color: var(--success) !important; }
+.btn-paste:hover { background: rgba(16, 185, 129, 0.2) !important; }
 .bp-badge { background: rgba(59, 130, 246, 0.15); color: var(--accent); font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
 
 /* Add Item Row */
@@ -1106,7 +1111,16 @@ body::after {
     padding: 4px;
 }
 
-.loot-table.view-cards .loot-row:hover .loot-delete {
+.loot-table.view-cards .loot-copy {
+    position: absolute;
+    top: 6px;
+    right: 34px;
+    opacity: 0;
+    padding: 4px;
+}
+
+.loot-table.view-cards .loot-row:hover .loot-delete,
+.loot-table.view-cards .loot-row:hover .loot-copy {
     opacity: 1;
 }
 
