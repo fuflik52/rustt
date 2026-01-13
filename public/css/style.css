@@ -1562,7 +1562,6 @@ body::after {
 /* Ammo slot - 5th slot for ammo */
 .item-slot.ammo-slot {
     position: relative;
-    border-color: var(--success);
 }
 
 .item-slot.ammo-slot:hover {
@@ -1571,6 +1570,7 @@ body::after {
 }
 
 .item-slot.ammo-slot.filled {
+    border-style: solid;
     border-color: var(--success);
     background: rgba(16, 185, 129, 0.15);
 }

@@ -119,6 +119,11 @@
                             <span class="loot-num"><%= index + 1 %></span>
                             <img src="/icons/<%= encodeURIComponent(item.shortname) %>.png" onerror="this.style.display='none'">
                             <span class="item-name"><%= getItemName(item.shortname) %></span>
+                            <% 
+                            // Определяем данные патронов (поддержка обоих форматов)
+                            const ammoShortname = item.ammo?.shortname || item.ammoType;
+                            const ammoAmount = item.ammo?.amount || item.ammoAmount || 0;
+                            %>
                             <% if (item.attachments && item.attachments.length > 0) { %>
                             <div class="item-slots">
                                 <% item.attachments.slice(0, 4).forEach(function(att) { %>
@@ -127,8 +132,8 @@
                                 <% for (let i = item.attachments.length; i < 4; i++) { %>
                                 <div class="item-slot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
                                 <% } %>
-                                <% if (item.ammo && item.ammo.shortname) { %>
-                                <div class="item-slot ammo-slot filled" onclick="event.stopPropagation(); openAmmoModal(<%= index %>)" title="<%= item.ammo.shortname %> x<%= item.ammo.amount || 0 %>"><img src="/icons/<%= encodeURIComponent(item.ammo.shortname) %>.png"><span class="ammo-count"><%= item.ammo.amount || 0 %></span></div>
+                                <% if (ammoShortname) { %>
+                                <div class="item-slot ammo-slot filled" onclick="event.stopPropagation(); openAmmoModal(<%= index %>)" title="<%= ammoShortname %> x<%= ammoAmount %>"><img src="/icons/<%= encodeURIComponent(ammoShortname) %>.png"><span class="ammo-count"><%= ammoAmount %></span></div>
                                 <% } else { %>
                                 <div class="item-slot ammo-slot" onclick="event.stopPropagation(); openAmmoModal(<%= index %>)" title="Добавить патроны"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>
                                 <% } %>

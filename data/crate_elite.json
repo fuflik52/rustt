@@ -4,5 +4,16 @@
     "minAmount": 1,
     "maxAmount": 3
   },
-  "lootPresets": []
+  "lootPresets": [
+    {
+      "shortname": "explosive.timed",
+      "displayName": "",
+      "rareDrop": 33,
+      "isBplueprint": false,
+      "amount": {
+        "minAmount": 7,
+        "maxAmount": 10
+      }
+    }
+  ]
 }
