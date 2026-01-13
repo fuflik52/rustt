@@ -284,8 +284,8 @@ body::after {
 
 /* Loot Table */
 .loot-table { background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; transition: all 0.3s; }
-.loot-header { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 50px; padding: 12px 20px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.loot-row { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 50px; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border); transition: all 0.2s ease; animation: rowIn 0.3s ease; }
+.loot-header { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 50px; padding: 12px 20px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.loot-row { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 50px; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border); transition: all 0.2s ease; animation: rowIn 0.3s ease; }
 .loot-row:hover { background: var(--bg-tertiary); }
 .loot-row:last-child { border-bottom: none; }
 @keyframes rowIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -1543,6 +1543,61 @@ body::after {
     opacity: 0.3;
 }
 
+/* ============ AMMO COLUMN ============ */
+.loot-ammo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 90px;
+}
+
+.loot-ammo.empty {
+    color: var(--text-muted);
+    font-size: 11px;
+    opacity: 0.5;
+}
+
+.loot-ammo .ammo-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.loot-ammo .ammo-info:hover {
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.loot-ammo .ammo-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.loot-ammo .ammo-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 20px;
+    text-align: center;
+}
+
+.loot-ammo .ammo-name {
+    font-size: 10px;
+    color: var(--text-secondary);
+    max-width: 60px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 /* Item name single line */
 .loot-identity .item-name {
     white-space: nowrap;
@@ -1756,5 +1811,171 @@ body::after {
 @media (max-width: 480px) {
     .empty-loot-cards {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* ============ AMMO MODAL ============ */
+.ammo-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.ammo-modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 340px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.2s ease;
+}
+
+.ammo-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.ammo-modal-weapon {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.ammo-modal-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text);
+}
+
+.ammo-modal-weapon-name {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.ammo-modal-close {
+    margin-left: auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.ammo-modal-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.ammo-modal-close svg {
+    width: 16px;
+    height: 16px;
+}
+
+.ammo-modal-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ammo-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ammo-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ammo-field select,
+.ammo-field input {
+    padding: 10px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.ammo-field select:focus,
+.ammo-field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.ammo-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.ammo-preview img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.ammo-preview span {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.ammo-modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.ammo-modal-footer .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

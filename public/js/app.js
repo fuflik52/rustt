@@ -119,6 +119,7 @@ function renderItems() {
             <input type="number" class="loot-input" value="${item.amount?.minAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'minAmount', this.value)">
             <input type="number" class="loot-input" value="${item.amount?.maxAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'maxAmount', this.value)">
             <input type="number" class="loot-input loot-skin" value="${item.skinID || 0}" min="0" onchange="updateItemLocal(${index}, 'skinID', this.value)">
+            ${getAmmoColumnHtml(item)}
             <div class="card-inputs">
                 <div class="card-input-group">
                     <span class="card-input-label">Шанс</span>
@@ -948,14 +949,144 @@ const AMMO_TYPES = {
 
 // Какой тип патронов использует оружие
 const WEAPON_AMMO_TYPE = {
-    'rifle.ak': 'rifle', 'rifle.ak.ice': 'rifle', 'rifle.bolt': 'rifle', 'rifle.l96': 'rifle',
-    'rifle.lr300': 'rifle', 'rifle.m39': 'rifle', 'rifle.semiauto': 'rifle', 'rifle.sks': 'rifle',
+    // Винтовки (5.56)
+    'rifle.ak': 'rifle', 'rifle.ak.ice': 'rifle', 'rifle.ak.diver': 'rifle', 'rifle.ak.jungle': 'rifle', 'rifle.ak.med': 'rifle',
+    'rifle.lr300': 'rifle', 'rifle.lr300.space': 'rifle',
+    'rifle.bolt': 'rifle', 'rifle.l96': 'rifle', 'rifle.m39': 'rifle', 'rifle.semiauto': 'rifle', 'rifle.sks': 'rifle',
     'lmg.m249': 'rifle', 'hmlmg': 'rifle',
-    'smg.2': 'pistol', 'smg.mp5': 'pistol', 'smg.thompson': 'pistol',
+    // SMG и пистолеты (9мм)
+    'smg.2': 'pistol', 'smg.mp5': 'pistol', 'smg.thompson': 'pistol', 't1_smg': 'pistol',
     'pistol.m92': 'pistol', 'pistol.python': 'pistol', 'pistol.revolver': 'pistol', 'pistol.semiauto': 'pistol',
-    'shotgun.pump': 'shotgun', 'shotgun.spas12': 'shotgun', 'shotgun.double': 'shotgun', 'shotgun.waterpipe': 'shotgun',
-    'crossbow': 'arrow', 'bow.compound': 'arrow', 'bow.hunting': 'arrow'
+    'pistol.semiauto.a.m15': 'pistol', 'pistol.prototype17': 'pistol', 'revolver.hc': 'pistol',
+    // Дробовики (12 калибр)
+    'shotgun.pump': 'shotgun', 'shotgun.spas12': 'shotgun', 'shotgun.double': 'shotgun', 
+    'shotgun.waterpipe': 'shotgun', 'shotgun.m4': 'shotgun',
+    // Луки и арбалеты (стрелы)
+    'crossbow': 'arrow', 'bow.compound': 'arrow', 'bow.hunting': 'arrow', 'minicrossbow': 'arrow'
 };
+
+// Размер магазина для оружия
+const WEAPON_MAG_SIZE = {
+    // Винтовки
+    'rifle.ak': 30, 'rifle.ak.ice': 30, 'rifle.ak.diver': 30, 'rifle.ak.jungle': 30, 'rifle.ak.med': 30,
+    'rifle.lr300': 30, 'rifle.lr300.space': 30,
+    'rifle.bolt': 4, 'rifle.l96': 5, 'rifle.m39': 20, 'rifle.semiauto': 16, 'rifle.sks': 16,
+    'lmg.m249': 100, 'hmlmg': 100,
+    // SMG
+    'smg.2': 24, 'smg.mp5': 30, 'smg.thompson': 20, 't1_smg': 16,
+    // Пистолеты
+    'pistol.m92': 15, 'pistol.python': 6, 'pistol.revolver': 8, 'pistol.semiauto': 10,
+    'pistol.semiauto.a.m15': 10, 'pistol.prototype17': 18, 'revolver.hc': 7,
+    // Дробовики
+    'shotgun.pump': 6, 'shotgun.spas12': 6, 'shotgun.double': 2, 'shotgun.waterpipe': 1, 'shotgun.m4': 8,
+    // Луки
+    'crossbow': 1, 'bow.compound': 1, 'bow.hunting': 1, 'minicrossbow': 1
+};
+
+// Получить HTML для колонки патронов
+function getAmmoColumnHtml(item) {
+    const ammoType = WEAPON_AMMO_TYPE[item.shortname];
+    
+    if (!ammoType) {
+        return '<div class="loot-ammo empty">—</div>';
+    }
+    
+    const ammoList = AMMO_TYPES[ammoType] || [];
+    const loadedAmmo = item.ammoType || (ammoList[0]?.shortname || '');
+    const ammoCount = item.ammoAmount || WEAPON_MAG_SIZE[item.shortname] || 0;
+    const ammoInfo = ammoList.find(a => a.shortname === loadedAmmo) || ammoList[0];
+    
+    if (!ammoInfo) {
+        return '<div class="loot-ammo empty">—</div>';
+    }
+    
+    return `
+        <div class="loot-ammo" data-shortname="${item.shortname}">
+            <div class="ammo-info" onclick="event.stopPropagation(); openAmmoSelector(${localItems.indexOf(item)})" title="Изменить патроны">
+                <img class="ammo-icon" src="/icons/${encodeURIComponent(ammoInfo.shortname)}.png" onerror="this.style.display='none'">
+                <span class="ammo-count">${ammoCount}</span>
+            </div>
+        </div>
+    `;
+}
+
+// Открыть селектор патронов
+function openAmmoSelector(index) {
+    if (index < 0 || index >= localItems.length) return;
+    
+    const item = localItems[index];
+    const ammoType = WEAPON_AMMO_TYPE[item.shortname];
+    if (!ammoType) return;
+    
+    const ammoList = AMMO_TYPES[ammoType] || [];
+    const currentAmmo = item.ammoType || (ammoList[0]?.shortname || '');
+    const currentCount = item.ammoAmount || WEAPON_MAG_SIZE[item.shortname] || 0;
+    const maxAmmo = WEAPON_MAG_SIZE[item.shortname] || 30;
+    
+    let optionsHtml = ammoList.map(a => 
+        `<option value="${a.shortname}" ${a.shortname === currentAmmo ? 'selected' : ''}>${a.name}</option>`
+    ).join('');
+    
+    const modal = document.createElement('div');
+    modal.className = 'ammo-modal';
+    modal.innerHTML = `
+        <div class="ammo-modal-content">
+            <div class="ammo-modal-header">
+                <img src="/icons/${encodeURIComponent(item.shortname)}.png" class="ammo-modal-weapon">
+                <div>
+                    <h3>Патроны</h3>
+                    <span class="ammo-modal-weapon-name">${getItemDisplayName(item.shortname)}</span>
+                </div>
+                <button class="ammo-modal-close" onclick="this.closest('.ammo-modal').remove()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="ammo-modal-body">
+                <div class="ammo-field">
+                    <label>Тип патронов</label>
+                    <select id="ammoTypeSelect">${optionsHtml}</select>
+                </div>
+                <div class="ammo-field">
+                    <label>Количество (макс: ${maxAmmo})</label>
+                    <input type="number" id="ammoCountInput" value="${currentCount}" min="0" max="${maxAmmo}">
+                </div>
+                <div class="ammo-preview">
+                    <img id="ammoPreviewIcon" src="/icons/${encodeURIComponent(currentAmmo)}.png">
+                    <span id="ammoPreviewName">${ammoList.find(a => a.shortname === currentAmmo)?.name || ''}</span>
+                </div>
+            </div>
+            <div class="ammo-modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.ammo-modal').remove()">Отмена</button>
+                <button class="btn" onclick="saveAmmoSelection(${index})">Сохранить</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Обновление превью при смене типа
+    document.getElementById('ammoTypeSelect').addEventListener('change', function() {
+        const selected = ammoList.find(a => a.shortname === this.value);
+        document.getElementById('ammoPreviewIcon').src = `/icons/${encodeURIComponent(this.value)}.png`;
+        document.getElementById('ammoPreviewName').textContent = selected?.name || '';
+    });
+}
+
+// Сохранить выбор патронов
+function saveAmmoSelection(index) {
+    if (index < 0 || index >= localItems.length) return;
+    
+    const ammoType = document.getElementById('ammoTypeSelect').value;
+    const ammoCount = parseInt(document.getElementById('ammoCountInput').value) || 0;
+    
+    localItems[index].ammoType = ammoType;
+    localItems[index].ammoAmount = ammoCount;
+    hasChanges = true;
+    
+    document.querySelector('.ammo-modal')?.remove();
+    renderItems();
+    showToast('Патроны обновлены', 'success');
+}
 
 function getModSlot(shortname) {
     for (const [slot, data] of Object.entries(MOD_SLOTS)) {

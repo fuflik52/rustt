@@ -105,6 +105,7 @@
                 <span>Мин</span>
                 <span>Макс</span>
                 <span>Skin ID</span>
+                <span>Патроны</span>
                 <span></span>
             </div>
             <div id="lootRows">
@@ -143,6 +144,7 @@
                         <input type="number" class="loot-input" value="<%= item.amount?.minAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'minAmount', this.value)">
                         <input type="number" class="loot-input" value="<%= item.amount?.maxAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'maxAmount', this.value)">
                         <input type="number" class="loot-input loot-skin" value="<%= item.skinID || 0 %>" min="0" placeholder="Skin" onchange="updateItem(<%= index %>, 'skinID', this.value)">
+                        <div class="loot-ammo empty">—</div>
                         <div class="card-inputs">
                             <div class="card-input-group">
                                 <span class="card-input-label">Шанс</span>
@@ -260,6 +262,7 @@
                 <span>Мин</span>
                 <span>Макс</span>
                 <span>Skin ID</span>
+                <span>Патроны</span>
                 <span></span>
             </div>
             <div id="lootRows"></div>
