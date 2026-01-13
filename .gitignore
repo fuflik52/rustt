@@ -3,3 +3,4 @@ node_modules/
 *.rar
 фото ящиков/
 uploads/
+.env

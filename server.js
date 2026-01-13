@@ -214,8 +214,8 @@ app.get('/items-list.json', (req, res) => {
     res.json(ALL_ITEMS);
 });
 
-// Steam API ключ
-const STEAM_API_KEY = '7C829374A03AB0069462812F2AB4B561';
+// Steam API ключ из переменной окружения
+const STEAM_API_KEY = process.env.STEAM_API_KEY || '';
 
 // Кэш Steam профилей (чтобы не делать много запросов)
 const steamProfilesCache = {};
