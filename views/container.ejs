@@ -109,7 +109,6 @@
                 <span>Мин</span>
                 <span>Макс</span>
                 <span>Skin ID</span>
-                <span>Патроны</span>
                 <span></span>
                 <span></span>
             </div>
@@ -128,10 +127,16 @@
                                 <% for (let i = item.attachments.length; i < 4; i++) { %>
                                 <div class="item-slot"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
                                 <% } %>
+                                <% if (item.ammo && item.ammo.shortname) { %>
+                                <div class="item-slot ammo-slot filled" onclick="event.stopPropagation(); openAmmoModal(<%= index %>)" title="<%= item.ammo.shortname %> x<%= item.ammo.amount || 0 %>"><img src="/icons/<%= encodeURIComponent(item.ammo.shortname) %>.png"><span class="ammo-count"><%= item.ammo.amount || 0 %></span></div>
+                                <% } else { %>
+                                <div class="item-slot ammo-slot" onclick="event.stopPropagation(); openAmmoModal(<%= index %>)" title="Добавить патроны"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>
+                                <% } %>
                             </div>
                             <% } else if (item.isBlueprint) { %>
                             <div class="item-slots">
                                 <div class="item-slot filled" onclick="event.stopPropagation(); toggleBlueprint(<%= index %>)" title="Убрать чертёж"><img src="/icons/blueprintbase.png"></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
                                 <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
                                 <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
                                 <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
@@ -142,6 +147,7 @@
                                 <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
                                 <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
                                 <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+                                <div class="item-slot locked"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
                             </div>
                             <% } %>
                         </div>
@@ -149,7 +155,6 @@
                         <input type="number" class="loot-input" value="<%= item.amount?.minAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'minAmount', this.value)">
                         <input type="number" class="loot-input" value="<%= item.amount?.maxAmount || 1 %>" min="1" onchange="updateItem(<%= index %>, 'maxAmount', this.value)">
                         <input type="number" class="loot-input loot-skin" value="<%= item.skinID || 0 %>" min="0" placeholder="Skin" onchange="updateItem(<%= index %>, 'skinID', this.value)">
-                        <div class="loot-ammo empty">—</div>
                         <div class="card-inputs">
                             <div class="card-input-group">
                                 <span class="card-input-label">Шанс</span>
@@ -270,7 +275,6 @@
                 <span>Мин</span>
                 <span>Макс</span>
                 <span>Skin ID</span>
-                <span>Патроны</span>
                 <span></span>
                 <span></span>
             </div>

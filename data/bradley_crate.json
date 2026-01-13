@@ -43,9 +43,7 @@
       "amount": {
         "minAmount": 1,
         "maxAmount": 1
-      },
-      "ammoType": "ammo.rifle.incendiary",
-      "ammo": 123
+      }
     },
     {
       "shortname": "rocket.launcher",
@@ -55,8 +53,7 @@
       "amount": {
         "minAmount": 1,
         "maxAmount": 1
-      },
-      "isBlueprint": false
+      }
     },
     {
       "shortname": "rifle.ak",

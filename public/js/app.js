@@ -83,8 +83,13 @@ function renderItems() {
         
         let slotsHtml = '';
         
+        // 5-й слот для патронов (для оружия)
+        const ammoSlot = (item.ammo && item.ammo.shortname)
+            ? `<div class="item-slot ammo-slot filled" onclick="event.stopPropagation(); openAmmoModal(${index})" title="${item.ammo.shortname} x${item.ammo.amount || 0}"><img src="/icons/${encodeURIComponent(item.ammo.shortname)}.png"><span class="ammo-count">${item.ammo.amount || 0}</span></div>`
+            : `<div class="item-slot ammo-slot" onclick="event.stopPropagation(); openAmmoModal(${index})" title="Добавить патроны"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div>`;
+        
         if (isWeapon) {
-            // Для оружия - 4 слота модулей
+            // Для оружия - 4 слота модулей + 1 слот патронов
             const slotTypes = ['scope', 'muzzle', 'magazine', 'underbarrel'];
             slotsHtml = '<div class="item-slots">';
             slotTypes.forEach(slotType => {
@@ -97,14 +102,15 @@ function renderItems() {
                     slotsHtml += `<div class="item-slot" onclick="event.stopPropagation(); openItemEdit(${index})" title="${MOD_SLOTS[slotType]?.label || slotType}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>`;
                 }
             });
+            slotsHtml += ammoSlot;
             slotsHtml += '</div>';
         } else {
-            // Для остальных - 1 слот чертежа + 3 заблокированных
+            // Для остальных - 1 слот чертежа + 4 заблокированных
             const bpSlot = item.isBlueprint 
                 ? `<div class="item-slot filled" onclick="event.stopPropagation(); toggleBlueprint(${index})" title="Убрать чертёж"><img src="/icons/blueprintbase.png"></div>`
                 : `<div class="item-slot" onclick="event.stopPropagation(); toggleBlueprint(${index})" title="Добавить чертёж"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>`;
             const lockedSlot = `<div class="item-slot locked" title="Заблокировано"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>`;
-            slotsHtml = `<div class="item-slots">${bpSlot}${lockedSlot}${lockedSlot}${lockedSlot}</div>`;
+            slotsHtml = `<div class="item-slots">${bpSlot}${lockedSlot}${lockedSlot}${lockedSlot}${lockedSlot}</div>`;
         }
         
         return `
@@ -119,7 +125,6 @@ function renderItems() {
             <input type="number" class="loot-input" value="${item.amount?.minAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'minAmount', this.value)">
             <input type="number" class="loot-input" value="${item.amount?.maxAmount || 1}" min="1" onchange="updateItemLocal(${index}, 'maxAmount', this.value)">
             <input type="number" class="loot-input loot-skin" value="${item.skinID || 0}" min="0" onchange="updateItemLocal(${index}, 'skinID', this.value)">
-            ${getAmmoColumnHtml(item)}
             <div class="card-inputs">
                 <div class="card-input-group">
                     <span class="card-input-label">Шанс</span>
@@ -138,6 +143,9 @@ function renderItems() {
                     <input type="number" class="loot-input" value="${item.skinID || 0}" min="0" onchange="updateItemLocal(${index}, 'skinID', this.value)">
                 </div>
             </div>
+            <button class="loot-copy" onclick="copyItem(${index})" title="Копировать настройки">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
             <button class="loot-delete" onclick="removeItemLocal(${index})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button>
@@ -1027,44 +1035,20 @@ const WEAPON_MAG_SIZE = {
     'crossbow': 1, 'bow.compound': 1, 'bow.hunting': 1, 'minicrossbow': 1
 };
 
-// Получить HTML для колонки патронов
-function getAmmoColumnHtml(item) {
-    const ammoType = WEAPON_AMMO_TYPE[item.shortname];
-    
-    if (!ammoType) {
-        return '<div class="loot-ammo empty">—</div>';
-    }
-    
-    const ammoList = AMMO_TYPES[ammoType] || [];
-    const loadedAmmo = item.ammoType || (ammoList[0]?.shortname || '');
-    const ammoCount = item.ammoAmount || WEAPON_MAG_SIZE[item.shortname] || 0;
-    const ammoInfo = ammoList.find(a => a.shortname === loadedAmmo) || ammoList[0];
-    
-    if (!ammoInfo) {
-        return '<div class="loot-ammo empty">—</div>';
-    }
-    
-    return `
-        <div class="loot-ammo" data-shortname="${item.shortname}">
-            <div class="ammo-info" onclick="event.stopPropagation(); openAmmoSelector(${localItems.indexOf(item)})" title="Изменить патроны">
-                <img class="ammo-icon" src="/icons/${encodeURIComponent(ammoInfo.shortname)}.png" onerror="this.style.display='none'">
-                <span class="ammo-count">${ammoCount}</span>
-            </div>
-        </div>
-    `;
-}
-
-// Открыть селектор патронов
-function openAmmoSelector(index) {
+// Открыть модальное окно выбора патронов
+function openAmmoModal(index) {
     if (index < 0 || index >= localItems.length) return;
     
     const item = localItems[index];
     const ammoType = WEAPON_AMMO_TYPE[item.shortname];
-    if (!ammoType) return;
+    if (!ammoType) {
+        showToast('Этот предмет не использует патроны', 'info');
+        return;
+    }
     
     const ammoList = AMMO_TYPES[ammoType] || [];
-    const currentAmmo = item.ammoType || (ammoList[0]?.shortname || '');
-    const currentCount = item.ammoAmount || WEAPON_MAG_SIZE[item.shortname] || 0;
+    const currentAmmo = item.ammo?.shortname || item.ammoType || (ammoList[0]?.shortname || '');
+    const currentCount = item.ammo?.amount || item.ammoAmount || WEAPON_MAG_SIZE[item.shortname] || 0;
     const maxAmmo = WEAPON_MAG_SIZE[item.shortname] || 30;
     
     let optionsHtml = ammoList.map(a => 
@@ -1123,6 +1107,12 @@ function saveAmmoSelection(index) {
     const ammoType = document.getElementById('ammoTypeSelect').value;
     const ammoCount = parseInt(document.getElementById('ammoCountInput').value) || 0;
     
+    // Сохраняем в новом формате
+    localItems[index].ammo = {
+        shortname: ammoType,
+        amount: ammoCount
+    };
+    // Для совместимости
     localItems[index].ammoType = ammoType;
     localItems[index].ammoAmount = ammoCount;
     hasChanges = true;

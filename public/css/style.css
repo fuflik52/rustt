@@ -284,8 +284,8 @@ body::after {
 
 /* Loot Table */
 .loot-table { background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; transition: all 0.3s; }
-.loot-header { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 40px 40px; padding: 12px 20px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.loot-row { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 100px 40px 40px; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border); transition: all 0.2s ease; animation: rowIn 0.3s ease; }
+.loot-header { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 40px 40px; padding: 12px 20px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.loot-row { display: grid; grid-template-columns: 1fr 90px 80px 80px 120px 40px 40px; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border); transition: all 0.2s ease; animation: rowIn 0.3s ease; }
 .loot-row:hover { background: var(--bg-tertiary); }
 .loot-row:last-child { border-bottom: none; }
 @keyframes rowIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -1559,59 +1559,35 @@ body::after {
     opacity: 0.3;
 }
 
-/* ============ AMMO COLUMN ============ */
-.loot-ammo {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 90px;
+/* Ammo slot - 5th slot for ammo */
+.item-slot.ammo-slot {
+    position: relative;
+    border-color: var(--success);
 }
 
-.loot-ammo.empty {
-    color: var(--text-muted);
-    font-size: 11px;
-    opacity: 0.5;
+.item-slot.ammo-slot:hover {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.15);
 }
 
-.loot-ammo .ammo-info {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 8px;
-    cursor: pointer;
-    transition: all 0.2s;
+.item-slot.ammo-slot.filled {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.15);
 }
 
-.loot-ammo .ammo-info:hover {
-    border-color: var(--accent);
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.loot-ammo .ammo-icon {
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
-}
-
-.loot-ammo .ammo-count {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text);
-    min-width: 20px;
+.item-slot.ammo-slot .ammo-count {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: var(--success);
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 3px;
+    border-radius: 3px;
+    line-height: 1;
+    min-width: 14px;
     text-align: center;
-}
-
-.loot-ammo .ammo-name {
-    font-size: 10px;
-    color: var(--text-secondary);
-    max-width: 60px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* Item name single line */
