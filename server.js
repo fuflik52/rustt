@@ -219,21 +219,9 @@ app.get('/players', (req, res) => {
 
 // Страница настройки стаков
 app.get('/stacks', (req, res) => {
-    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
-    let stacksData = {};
-    
-    if (fs.existsSync(stacksFile)) {
-        try {
-            stacksData = JSON.parse(fs.readFileSync(stacksFile, 'utf8'));
-        } catch (e) {
-            stacksData = {};
-        }
-    }
-    
     const containers = getContainers();
     
     res.render('stacks', {
-        stacksData,
         items: ALL_ITEMS,
         categories: getCategories(),
         getItemName: getItemName,

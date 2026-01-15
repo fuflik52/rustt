@@ -121,9 +121,13 @@
     </div>
     
     <script>
-        const stacksData = <%- JSON.stringify(stacksData) %>;
+        // Все данные из localStorage - у каждого пользователя свои
+        const STORAGE_KEY = 'lootEditor_stacks';
         const allItems = <%- JSON.stringify(items) %>;
         const categories = <%- JSON.stringify(categories) %>;
+        
+        // Загружаем стаки из localStorage
+        let stacksData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         
         let stackCategory = 'all';
         let stackSearch = '';
@@ -136,6 +140,11 @@
         
         function parseFormattedNumber(str) {
             return parseInt(str.replace(/\s/g, ''), 10) || 0;
+        }
+        
+        // Сохранение в localStorage
+        function saveToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(stacksData));
         }
         
         function initStacks() {
@@ -241,51 +250,28 @@
             }
         }
 
-        async function saveStack(shortname, value) {
-            try {
-                const res = await fetch(`/api/stacks/${shortname}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ stackSize: value })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    stacksData[shortname] = value;
-                    updateStats();
-                    showToast(`${formatNumber(value)}`, 'success');
-                }
-            } catch (e) {
-                showToast('Ошибка', 'error');
-            }
+        function saveStack(shortname, value) {
+            stacksData[shortname] = value;
+            saveToStorage();
+            updateStats();
+            showToast(`${formatNumber(value)}`, 'success');
         }
         
-        async function resetStack(shortname) {
-            try {
-                const res = await fetch(`/api/stacks/${shortname}`, { method: 'DELETE' });
-                if ((await res.json()).success) {
-                    delete stacksData[shortname];
-                    renderStacks();
-                    updateStats();
-                    showToast('Удалено', 'success');
-                }
-            } catch (e) {
-                showToast('Ошибка', 'error');
-            }
+        function resetStack(shortname) {
+            delete stacksData[shortname];
+            saveToStorage();
+            renderStacks();
+            updateStats();
+            showToast('Удалено', 'success');
         }
         
-        async function clearAllStacks() {
+        function clearAllStacks() {
             if (!confirm('Сбросить все стаки?')) return;
-            try {
-                const res = await fetch('/api/stacks', { method: 'DELETE' });
-                if ((await res.json()).success) {
-                    Object.keys(stacksData).forEach(k => delete stacksData[k]);
-                    renderStacks();
-                    updateStats();
-                    showToast('Очищено', 'success');
-                }
-            } catch (e) {
-                showToast('Ошибка', 'error');
-            }
+            stacksData = {};
+            saveToStorage();
+            renderStacks();
+            updateStats();
+            showToast('Очищено', 'success');
         }
         
         function updateStats() {
@@ -294,10 +280,8 @@
             document.getElementById('defaultItems').textContent = formatNumber(allItems.length - Object.keys(stacksData).length);
         }
         
-        async function exportStacks() {
-            const res = await fetch('/api/stacks/export');
-            const data = await res.json();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        function exportStacks() {
+            const blob = new Blob([JSON.stringify(stacksData, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'SimpleStackSize.json';
@@ -312,19 +296,16 @@
             input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-                const text = await file.text();
-                const data = JSON.parse(text);
-                const res = await fetch('/api/stacks/import', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if ((await res.json()).success) {
-                    Object.keys(stacksData).forEach(k => delete stacksData[k]);
-                    Object.assign(stacksData, data);
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    stacksData = data;
+                    saveToStorage();
                     renderStacks();
                     updateStats();
                     showToast('Импортировано', 'success');
+                } catch (err) {
+                    showToast('Ошибка чтения файла', 'error');
                 }
             };
             input.click();
@@ -401,28 +382,18 @@
             }).join('');
         }
         
-        async function addStackItem(shortname) {
+        function addStackItem(shortname) {
             if (stacksData[shortname]) {
                 showToast('Уже добавлен', 'error');
                 return;
             }
             const val = 1000;
-            try {
-                const res = await fetch(`/api/stacks/${shortname}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ stackSize: val })
-                });
-                if ((await res.json()).success) {
-                    stacksData[shortname] = val;
-                    renderStacks();
-                    updateStats();
-                    renderPickerGrid();
-                    showToast('Добавлено', 'success');
-                }
-            } catch (e) {
-                showToast('Ошибка', 'error');
-            }
+            stacksData[shortname] = val;
+            saveToStorage();
+            renderStacks();
+            updateStats();
+            renderPickerGrid();
+            showToast('Добавлено', 'success');
         }
 
         // Toast
