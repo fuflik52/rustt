@@ -523,3 +523,178 @@
     padding: 40px;
     color: var(--text-muted);
 }
+
+
+/* Mobile Responsive */
+@media (max-width: 1200px) {
+    .stacks-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .stacks-content {
+        padding: 16px;
+    }
+    
+    .stacks-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .stacks-title h1 {
+        font-size: 20px;
+    }
+    
+    .stacks-title h1 svg {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .stacks-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .stacks-actions .btn {
+        justify-content: center;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .stacks-stats {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 16px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+    
+    .stacks-categories {
+        gap: 6px;
+        margin-bottom: 16px;
+    }
+    
+    .stacks-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stack-card {
+        padding: 14px;
+    }
+    
+    .stack-item-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .stack-item-icon img {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .stack-item-name {
+        font-size: 13px;
+    }
+    
+    .stack-input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .stack-reset-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    /* Modal mobile */
+    #stackPickerModal .modal-content {
+        width: 95%;
+        max-height: 90vh;
+        border-radius: 12px;
+    }
+    
+    #stackPickerModal .modal-header {
+        padding: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    #stackPickerModal .modal-header h2 {
+        font-size: 16px;
+        width: 100%;
+        order: 1;
+    }
+    
+    #stackPickerModal .modal-header input {
+        flex: 1;
+        order: 2;
+    }
+    
+    #stackPickerModal .close-btn {
+        order: 3;
+    }
+    
+    #stackPickerModal .categories-wrapper {
+        padding: 12px 16px;
+    }
+    
+    #stackPickerModal .category-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    #stackPickerModal .item-picker-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+        padding: 16px;
+    }
+    
+    #stackPickerModal .item-card {
+        padding: 10px;
+        border-radius: 10px;
+    }
+    
+    #stackPickerModal .item-card img {
+        width: 48px;
+        height: 48px;
+    }
+    
+    #stackPickerModal .item-card span {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stacks-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .stacks-search {
+        padding: 12px 14px;
+    }
+    
+    .stacks-search input {
+        font-size: 14px;
+    }
+    
+    .stack-input-group {
+        gap: 8px;
+    }
+    
+    .stack-input-group label {
+        display: none;
+    }
+    
+    #stackPickerModal .item-picker-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

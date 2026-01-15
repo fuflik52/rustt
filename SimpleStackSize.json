@@ -5,6 +5,6 @@
   "metal.fragments": 10000,
   "sulfur": 10000,
   "cloth": 5000,
-  "barricade.wood.cover": 1000,
+  "barricade.wood.cover": 1,
   "barricade.wood": 1000
 }
