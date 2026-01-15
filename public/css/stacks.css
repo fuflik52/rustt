@@ -982,3 +982,53 @@
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+/* ============ MULTIPLIER BADGE ============ */
+.stack-multiplier {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    z-index: 1;
+}
+
+.stack-multiplier.mult-up {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.stack-multiplier.mult-down {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Compact view multiplier */
+.stack-compact .stack-multiplier {
+    top: 4px;
+    left: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+}
+
+/* List view multiplier */
+.stack-row .stack-multiplier {
+    position: static;
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+/* Adjust unedited dot position when multiplier is present */
+.stack-card.unedited .stack-unedited-dot {
+    top: 10px;
+    right: 10px;
+}
+
+.stack-compact.unedited .stack-multiplier {
+    left: auto;
+    right: 24px;
+}
