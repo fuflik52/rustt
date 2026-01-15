@@ -262,6 +262,15 @@
                 return;
             }
             
+            // Сортировка: отредактированные сначала, новые (нередактированные) в конце
+            filteredItems.sort((a, b) => {
+                const aUnedited = uneditedStacks.includes(a.shortname);
+                const bUnedited = uneditedStacks.includes(b.shortname);
+                if (aUnedited && !bUnedited) return 1;
+                if (!aUnedited && bUnedited) return -1;
+                return a.name.localeCompare(b.name);
+            });
+            
             container.innerHTML = filteredItems.map(item => {
                 const val = stacksData[item.shortname];
                 const isUnedited = uneditedStacks.includes(item.shortname);
