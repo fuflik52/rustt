@@ -79,6 +79,34 @@
                         <path d="M21 21l-4.35-4.35"/>
                     </svg>
                     <input type="text" id="stackSearch" placeholder="Поиск предмета..." oninput="filterStacks()">
+                    
+                    <div class="stacks-view-toggle">
+                        <button class="view-btn active" data-view="cards" onclick="setStackView('cards')" title="Карточки">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                            </svg>
+                        </button>
+                        <button class="view-btn" data-view="compact" onclick="setStackView('compact')" title="Компактно">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="5" height="5" rx="1"/>
+                                <rect x="10" y="3" width="5" height="5" rx="1"/>
+                                <rect x="17" y="3" width="5" height="5" rx="1"/>
+                                <rect x="3" y="10" width="5" height="5" rx="1"/>
+                                <rect x="10" y="10" width="5" height="5" rx="1"/>
+                                <rect x="17" y="10" width="5" height="5" rx="1"/>
+                            </svg>
+                        </button>
+                        <button class="view-btn" data-view="list" onclick="setStackView('list')" title="Список">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="3" y1="6" x2="21" y2="6"/>
+                                <line x1="3" y1="12" x2="21" y2="12"/>
+                                <line x1="3" y1="18" x2="21" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="stacks-categories" id="stackCategories"></div>
@@ -136,6 +164,7 @@
         let stackSearch = '';
         let pickerCat = 'all';
         let pickerSearch = '';
+        let stackViewMode = localStorage.getItem('lootEditor_stackView') || 'cards';
         
         function formatNumber(num) {
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -164,8 +193,20 @@
         
         function initStacks() {
             renderCategories();
+            setStackView(stackViewMode);
             renderStacks();
             updateStats();
+        }
+        
+        function setStackView(mode) {
+            stackViewMode = mode;
+            localStorage.setItem('lootEditor_stackView', mode);
+            document.querySelectorAll('.stacks-view-toggle .view-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === mode);
+            });
+            const grid = document.getElementById('stacksGrid');
+            grid.className = 'stacks-grid view-' + mode;
+            renderStacks();
         }
         
         function renderCategories() {
@@ -224,35 +265,75 @@
             container.innerHTML = filteredItems.map(item => {
                 const val = stacksData[item.shortname];
                 const isUnedited = uneditedStacks.includes(item.shortname);
-                return `
-                    <div class="stack-card modified ${isUnedited ? 'unedited' : ''}">
-                        ${isUnedited ? '<span class="stack-unedited-dot"></span>' : ''}
-                        <div class="stack-item-header">
-                            <div class="stack-item-icon">
-                                <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'">
-                            </div>
-                            <div class="stack-item-info">
-                                <div class="stack-item-name">${item.name}</div>
-                                <div class="stack-item-shortname">${item.shortname}</div>
-                            </div>
-                        </div>
-                        <div class="stack-input-group">
-                            <label>Макс:</label>
-                            <div class="stack-input-wrapper">
-                                <input type="text" class="stack-input" value="${formatNumber(val)}" 
-                                    data-shortname="${item.shortname}"
-                                    onfocus="this.value=this.value.replace(/\\s/g,'')"
-                                    onblur="handleBlur(this)"
-                                    onkeydown="if(event.key==='Enter')this.blur()">
-                            </div>
-                            <button class="stack-reset-btn" onclick="resetStack('${item.shortname}')">
+                
+                if (stackViewMode === 'list') {
+                    return `
+                        <div class="stack-row ${isUnedited ? 'unedited' : ''}">
+                            ${isUnedited ? '<span class="stack-unedited-dot"></span>' : ''}
+                            <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'" class="stack-row-icon">
+                            <span class="stack-row-name">${item.name}</span>
+                            <span class="stack-row-shortname">${item.shortname}</span>
+                            <input type="text" class="stack-row-input" value="${formatNumber(val)}" 
+                                data-shortname="${item.shortname}"
+                                onfocus="this.value=this.value.replace(/\\s/g,'')"
+                                onblur="handleBlur(this)"
+                                onkeydown="if(event.key==='Enter')this.blur()">
+                            <button class="stack-row-delete" onclick="resetStack('${item.shortname}')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M18 6L6 18M6 6l12 12"/>
                                 </svg>
                             </button>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else if (stackViewMode === 'compact') {
+                    return `
+                        <div class="stack-compact ${isUnedited ? 'unedited' : ''}">
+                            ${isUnedited ? '<span class="stack-unedited-dot"></span>' : ''}
+                            <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'" class="stack-compact-icon">
+                            <input type="text" class="stack-compact-input" value="${formatNumber(val)}" 
+                                data-shortname="${item.shortname}"
+                                onfocus="this.value=this.value.replace(/\\s/g,'')"
+                                onblur="handleBlur(this)"
+                                onkeydown="if(event.key==='Enter')this.blur()">
+                            <button class="stack-compact-delete" onclick="resetStack('${item.shortname}')" title="Удалить">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                            <span class="stack-compact-name">${item.name}</span>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="stack-card modified ${isUnedited ? 'unedited' : ''}">
+                            ${isUnedited ? '<span class="stack-unedited-dot"></span>' : ''}
+                            <div class="stack-item-header">
+                                <div class="stack-item-icon">
+                                    <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'">
+                                </div>
+                                <div class="stack-item-info">
+                                    <div class="stack-item-name">${item.name}</div>
+                                    <div class="stack-item-shortname">${item.shortname}</div>
+                                </div>
+                            </div>
+                            <div class="stack-input-group">
+                                <label>Макс:</label>
+                                <div class="stack-input-wrapper">
+                                    <input type="text" class="stack-input" value="${formatNumber(val)}" 
+                                        data-shortname="${item.shortname}"
+                                        onfocus="this.value=this.value.replace(/\\s/g,'')"
+                                        onblur="handleBlur(this)"
+                                        onkeydown="if(event.key==='Enter')this.blur()">
+                                </div>
+                                <button class="stack-reset-btn" onclick="resetStack('${item.shortname}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 6L6 18M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
             }).join('');
         }
         
