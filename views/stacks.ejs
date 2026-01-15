@@ -159,14 +159,6 @@
         let stacksData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
         // Нередактированные стаки (только добавленные, но не изменённые)
         let uneditedStacks = JSON.parse(localStorage.getItem(UNEDITED_STACKS_KEY) || '[]');
-        // Ванильные значения стаков
-        let vanillaStacks = {};
-        
-        // Загрузка ванильных значений
-        fetch('/data/vanilla-stacks.json')
-            .then(r => r.json())
-            .then(data => { vanillaStacks = data; renderStacks(); })
-            .catch(() => {});
         
         let stackCategory = 'all';
         let stackSearch = '';
@@ -180,23 +172,6 @@
         
         function parseFormattedNumber(str) {
             return parseInt(str.replace(/\s/g, ''), 10) || 0;
-        }
-        
-        function getMultiplier(shortname, value) {
-            const vanilla = vanillaStacks[shortname];
-            if (!vanilla) return null;
-            const mult = value / vanilla;
-            if (mult === 1) return null;
-            return mult;
-        }
-        
-        function formatMultiplier(mult) {
-            if (mult === null) return '';
-            if (mult >= 1) {
-                return 'x' + (mult % 1 === 0 ? mult : mult.toFixed(1));
-            } else {
-                return 'x' + mult.toFixed(2);
-            }
         }
         
         // Сохранение в localStorage
@@ -300,10 +275,6 @@
                 const val = stacksData[item.shortname];
                 const isUnedited = uneditedStacks.includes(item.shortname);
                 
-                const mult = getMultiplier(item.shortname, val);
-                const multStr = formatMultiplier(mult);
-                const multClass = mult !== null ? (mult > 1 ? 'mult-up' : 'mult-down') : '';
-                
                 if (stackViewMode === 'list') {
                     return `
                         <div class="stack-row ${isUnedited ? 'unedited' : ''}">
@@ -311,7 +282,6 @@
                             <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'" class="stack-row-icon">
                             <span class="stack-row-name">${item.name}</span>
                             <span class="stack-row-shortname">${item.shortname}</span>
-                            ${multStr ? `<span class="stack-multiplier ${multClass}">${multStr}</span>` : ''}
                             <input type="text" class="stack-row-input" value="${formatNumber(val)}" 
                                 data-shortname="${item.shortname}"
                                 onfocus="this.value=this.value.replace(/\\s/g,'')"
@@ -328,7 +298,6 @@
                     return `
                         <div class="stack-compact ${isUnedited ? 'unedited' : ''}">
                             ${isUnedited ? '<span class="stack-unedited-dot"></span>' : ''}
-                            ${multStr ? `<span class="stack-multiplier ${multClass}">${multStr}</span>` : ''}
                             <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'" class="stack-compact-icon">
                             <input type="text" class="stack-compact-input" value="${formatNumber(val)}" 
                                 data-shortname="${item.shortname}"
@@ -347,7 +316,6 @@
                     return `
                         <div class="stack-card modified ${isUnedited ? 'unedited' : ''}">
                             ${isUnedited ? '<span class="stack-unedited-dot"></span>' : ''}
-                            ${multStr ? `<span class="stack-multiplier ${multClass}">${multStr}</span>` : ''}
                             <div class="stack-item-header">
                                 <div class="stack-item-icon">
                                     <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'">
