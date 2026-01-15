@@ -3,6 +3,47 @@ let localItems = [];
 let hasChanges = false;
 let autoSaveInterval = null;
 
+// ============ UNEDITED CONTAINERS TRACKING ============
+const UNEDITED_KEY = 'lootEditor_uneditedContainers';
+
+function getUneditedContainers() {
+    return JSON.parse(localStorage.getItem(UNEDITED_KEY) || '[]');
+}
+
+function addUneditedContainer(name) {
+    const unedited = getUneditedContainers();
+    if (!unedited.includes(name)) {
+        unedited.push(name);
+        localStorage.setItem(UNEDITED_KEY, JSON.stringify(unedited));
+    }
+    updateUneditedDots();
+}
+
+function markContainerEdited(name) {
+    const unedited = getUneditedContainers();
+    const idx = unedited.indexOf(name);
+    if (idx !== -1) {
+        unedited.splice(idx, 1);
+        localStorage.setItem(UNEDITED_KEY, JSON.stringify(unedited));
+    }
+    updateUneditedDots();
+}
+
+function updateUneditedDots() {
+    const unedited = getUneditedContainers();
+    document.querySelectorAll('.container-item[data-container]').forEach(el => {
+        const name = el.dataset.container;
+        if (unedited.includes(name)) {
+            el.classList.add('unedited');
+        } else {
+            el.classList.remove('unedited');
+        }
+    });
+}
+
+// Инициализация точек при загрузке
+document.addEventListener('DOMContentLoaded', updateUneditedDots);
+
 function initLocalState() {
     if (typeof CONTAINER_DATA !== 'undefined' && CONTAINER_DATA.lootPresets) {
         localItems = JSON.parse(JSON.stringify(CONTAINER_DATA.lootPresets));
@@ -49,6 +90,7 @@ async function saveToServer() {
             body: JSON.stringify({ items: localItems })
         });
         hasChanges = false;
+        markContainerEdited(CONTAINER_NAME);
         showToast('Сохранено на сервер', 'success');
     } catch (err) {
         showToast('Ошибка сохранения', 'error');
@@ -589,6 +631,8 @@ async function addContainerFromPicker(shortname) {
         if (goTo) window.location.href = `/container/${encodeURIComponent(shortname)}`;
         return;
     }
+    // Добавляем в список нередактированных
+    addUneditedContainer(shortname);
     closeContainerPicker();
     showToast('Контейнер создан', 'success');
     setTimeout(() => window.location.href = `/container/${encodeURIComponent(shortname)}`, 300);

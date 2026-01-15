@@ -95,7 +95,8 @@
             const containerInfo = rustContainers.find(c => c.shortname === name) || {};
             const containerImage = containerInfo.image || '';
         %>
-            <a href="/container/<%= encodeURIComponent(name) %>" class="container-item <%= currentContainer === name ? 'active' : '' %>">
+            <a href="/container/<%= encodeURIComponent(name) %>" class="container-item <%= currentContainer === name ? 'active' : '' %>" data-container="<%= name %>">
+                <span class="container-unedited-dot"></span>
                 <% if (containerImage) { %>
                     <img src="<%= containerImage %>" class="container-item-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
                     <div class="container-item-icon-fallback" style="display:none">
