@@ -1,0 +1,525 @@
+/* Stacks Page Styles */
+
+.stacks-content {
+    padding: 32px;
+    max-width: 1400px;
+}
+
+.stacks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.stacks-title h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stacks-title h1 svg {
+    width: 28px;
+    height: 28px;
+    color: var(--accent);
+}
+
+.stacks-title p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.stacks-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Stats */
+.stacks-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Search */
+.stacks-search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+
+.stacks-search svg {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.stacks-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+
+/* Categories */
+.stacks-categories {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+/* Grid */
+.stacks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+/* Card */
+.stack-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    transition: all 0.2s;
+}
+
+.stack-card:hover {
+    border-color: var(--accent);
+}
+
+.stack-card.modified {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.stack-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.stack-item-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stack-item-icon img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.stack-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.stack-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stack-item-shortname {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Input */
+.stack-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stack-input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.stack-input-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.stack-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.2s;
+    -moz-appearance: textfield;
+}
+
+.stack-input::-webkit-outer-spin-button,
+.stack-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.stack-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg);
+}
+
+/* Reset Button */
+.stack-reset-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stack-reset-btn:hover {
+    background: var(--danger-light);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.stack-reset-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Empty State */
+.stacks-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    grid-column: 1 / -1;
+}
+
+.stacks-empty svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.stacks-empty p {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.stacks-empty span {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .stacks-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .stacks-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .stacks-actions {
+        width: 100%;
+    }
+    
+    .stacks-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Stack Picker Modal */
+#stackPickerModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+#stackPickerModal.active {
+    display: flex;
+}
+
+#stackPickerModal .modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#stackPickerModal .modal-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+#stackPickerModal .modal-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#stackPickerModal .modal-header input {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+}
+
+#stackPickerModal .modal-header input:focus {
+    border-color: var(--accent);
+}
+
+#stackPickerModal .close-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#stackPickerModal .close-btn:hover {
+    background: var(--danger-light);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+#stackPickerModal .close-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* Categories */
+#stackPickerModal .categories-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+}
+
+#stackPickerModal .categories-scroll-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#stackPickerModal .categories-scroll-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+#stackPickerModal .categories-scroll-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+#stackPickerModal .item-categories {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    flex: 1;
+    scrollbar-width: none;
+}
+
+#stackPickerModal .item-categories::-webkit-scrollbar {
+    display: none;
+}
+
+#stackPickerModal .category-btn {
+    padding: 8px 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+#stackPickerModal .category-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+#stackPickerModal .category-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+
+/* Picker Grid */
+#stackPickerModal .item-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+#stackPickerModal .item-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+#stackPickerModal .item-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+#stackPickerModal .item-card.selected {
+    border-color: var(--success);
+    background: var(--success-light);
+}
+
+#stackPickerModal .item-card img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+#stackPickerModal .item-card span {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.3;
+    max-height: 2.6em;
+    overflow: hidden;
+}
+
+#stackPickerModal .item-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    background: var(--success);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#stackPickerModal .item-check svg {
+    width: 12px;
+    height: 12px;
+    color: white;
+}
+
+#stackPickerModal .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}

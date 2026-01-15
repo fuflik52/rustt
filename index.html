@@ -34,6 +34,14 @@
                     </svg>
                     Добавить контейнер
                 </button>
+                
+                <!-- Stack Size Button -->
+                <button class="btn-add-container" onclick="window.location.href='/stacks'" style="margin-top: 8px; background: var(--accent-light); border-color: var(--accent); color: var(--accent);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                    </svg>
+                    Настройка стаков
+                </button>
             </div>
         </aside>
         
@@ -61,6 +69,12 @@
                                 <path d="M12 5v14M5 12h14"/>
                             </svg>
                             Создать контейнер
+                        </button>
+                        <button class="btn-welcome-primary" onclick="window.location.href='/stacks'" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                            </svg>
+                            Настройка стаков
                         </button>
                         <button class="btn-welcome-secondary" onclick="importJson()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -240,6 +254,11 @@
     
     <!-- Global Actions -->
     <div class="global-actions">
+        <button class="btn-global" onclick="window.location.href='/stacks'" title="Настройка стаков">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+        </button>
         <button class="btn-global" onclick="exportJson()" title="Экспорт всех">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>

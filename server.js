@@ -10,6 +10,13 @@ const PORT = 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Явно отдаём style.css с правильным MIME типом
+app.get('/style.css', (req, res) => {
+    res.type('text/css');
+    res.sendFile(path.join(__dirname, 'style.css'));
+});
+
 app.use(express.static('public'));
 app.use('/icons', express.static('icons')); // Иконки из папки icons
 app.use('/crates', express.static('public/crates')); // Фото ящиков
@@ -207,6 +214,31 @@ app.get('/players', (req, res) => {
         progressData,
         items: ALL_ITEMS,
         getItemName: getItemName
+    });
+});
+
+// Страница настройки стаков
+app.get('/stacks', (req, res) => {
+    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
+    let stacksData = {};
+    
+    if (fs.existsSync(stacksFile)) {
+        try {
+            stacksData = JSON.parse(fs.readFileSync(stacksFile, 'utf8'));
+        } catch (e) {
+            stacksData = {};
+        }
+    }
+    
+    const containers = getContainers();
+    
+    res.render('stacks', {
+        stacksData,
+        items: ALL_ITEMS,
+        categories: getCategories(),
+        getItemName: getItemName,
+        containers,
+        rustContainers: RUST_CONTAINERS
     });
 });
 
@@ -568,6 +600,108 @@ app.delete('/api/container/:name', (req, res) => {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
+    
+    res.json({ success: true });
+});
+
+// ============ STACK SIZE API ============
+
+// Получить все настройки стаков
+app.get('/api/stacks', (req, res) => {
+    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
+    let stacksData = {};
+    
+    if (fs.existsSync(stacksFile)) {
+        try {
+            stacksData = JSON.parse(fs.readFileSync(stacksFile, 'utf8'));
+        } catch (e) {
+            stacksData = {};
+        }
+    }
+    
+    res.json(stacksData);
+});
+
+// Обновить размер стака для предмета
+app.post('/api/stacks/:shortname', (req, res) => {
+    const shortname = req.params.shortname;
+    const stackSize = parseInt(req.body.stackSize);
+    
+    if (!stackSize || stackSize < 1) {
+        return res.json({ error: 'invalid stack size' });
+    }
+    
+    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
+    let stacksData = {};
+    
+    if (fs.existsSync(stacksFile)) {
+        try {
+            stacksData = JSON.parse(fs.readFileSync(stacksFile, 'utf8'));
+        } catch (e) {
+            stacksData = {};
+        }
+    }
+    
+    stacksData[shortname] = stackSize;
+    fs.writeFileSync(stacksFile, JSON.stringify(stacksData, null, 2));
+    
+    res.json({ success: true });
+});
+
+// Удалить настройку стака (вернуть к стандартному)
+app.delete('/api/stacks/:shortname', (req, res) => {
+    const shortname = req.params.shortname;
+    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
+    let stacksData = {};
+    
+    if (fs.existsSync(stacksFile)) {
+        try {
+            stacksData = JSON.parse(fs.readFileSync(stacksFile, 'utf8'));
+        } catch (e) {
+            stacksData = {};
+        }
+    }
+    
+    delete stacksData[shortname];
+    fs.writeFileSync(stacksFile, JSON.stringify(stacksData, null, 2));
+    
+    res.json({ success: true });
+});
+
+// Экспорт настроек стаков
+app.get('/api/stacks/export', (req, res) => {
+    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
+    let stacksData = {};
+    
+    if (fs.existsSync(stacksFile)) {
+        try {
+            stacksData = JSON.parse(fs.readFileSync(stacksFile, 'utf8'));
+        } catch (e) {
+            stacksData = {};
+        }
+    }
+    
+    res.json(stacksData);
+});
+
+// Импорт настроек стаков
+app.post('/api/stacks/import', (req, res) => {
+    const data = req.body;
+    
+    if (!data || typeof data !== 'object') {
+        return res.json({ error: 'invalid data' });
+    }
+    
+    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
+    fs.writeFileSync(stacksFile, JSON.stringify(data, null, 2));
+    
+    res.json({ success: true });
+});
+
+// Очистить все настройки стаков
+app.delete('/api/stacks', (req, res) => {
+    const stacksFile = path.join(__dirname, 'SimpleStackSize.json');
+    fs.writeFileSync(stacksFile, JSON.stringify({}, null, 2));
     
     res.json({ success: true });
 });

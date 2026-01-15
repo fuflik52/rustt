@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <link rel="stylesheet" href="/css/stacks.css">
+    <title>Настройка стаков - Loot Editor</title>
+</head>
+<body>
+    <div class="app-wrapper">
+        <%- include('partials/sidebar', { containers, currentContainer: null, rustContainers }) %>
+        
+        <div class="main">
+            <div class="header">
+                <h1>Настройка стаков</h1>
+            </div>
+            
+            <div class="stacks-content">
+                <div class="stacks-header">
+                    <div class="stacks-title">
+                        <h1>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                            </svg>
+                            Размеры стаков
+                        </h1>
+                        <p>Настройте максимальное количество предметов в стаке</p>
+                    </div>
+                    <div class="stacks-actions">
+                        <button class="btn btn-primary" onclick="openStackPicker()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Добавить
+                        </button>
+                        <button class="btn" onclick="exportStacks()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Экспорт
+                        </button>
+                        <button class="btn" onclick="importStacks()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Импорт
+                        </button>
+                        <button class="btn btn-danger" onclick="clearAllStacks()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                            </svg>
+                            Очистить
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="stacks-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalItems">0</div>
+                        <div class="stat-label">Всего предметов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="modifiedItems">0</div>
+                        <div class="stat-label">Изменено</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="defaultItems">0</div>
+                        <div class="stat-label">По умолчанию</div>
+                    </div>
+                </div>
+                
+                <div class="stacks-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input type="text" id="stackSearch" placeholder="Поиск предмета..." oninput="filterStacks()">
+                </div>
+                
+                <div class="stacks-categories" id="stackCategories"></div>
+                <div class="stacks-grid" id="stacksGrid"></div>
+                
+                <div class="stacks-empty" id="emptyState" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                    </svg>
+                    <p>Нет настроенных стаков</p>
+                    <span>Нажмите "Добавить" чтобы настроить размер стака</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stack Item Picker Modal -->
+    <div class="modal" id="stackPickerModal">
+        <div class="modal-content modal-picker" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Выберите предметы</h2>
+                <input type="text" id="pickerSearch" placeholder="Поиск..." oninput="filterPicker()">
+                <button class="close-btn" onclick="closeStackPicker()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="categories-wrapper">
+                <button class="categories-scroll-btn" onclick="scrollPickerCats(-1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="item-categories" id="pickerCategories"></div>
+                <button class="categories-scroll-btn" onclick="scrollPickerCats(1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </div>
+            <div class="item-picker-grid" id="pickerGrid"></div>
+        </div>
+    </div>
+    
+    <script>
+        const stacksData = <%- JSON.stringify(stacksData) %>;
+        const allItems = <%- JSON.stringify(items) %>;
+        const categories = <%- JSON.stringify(categories) %>;
+        
+        let stackCategory = 'all';
+        let stackSearch = '';
+        let pickerCat = 'all';
+        let pickerSearch = '';
+        
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        }
+        
+        function parseFormattedNumber(str) {
+            return parseInt(str.replace(/\s/g, ''), 10) || 0;
+        }
+        
+        function initStacks() {
+            renderCategories();
+            renderStacks();
+            updateStats();
+        }
+        
+        function renderCategories() {
+            const container = document.getElementById('stackCategories');
+            container.innerHTML = `
+                <button class="category-btn active" onclick="selectStackCategory('all', this)">Все</button>
+                ${categories.map(cat => `
+                    <button class="category-btn" onclick="selectStackCategory('${cat}', this)">${cat}</button>
+                `).join('')}
+            `;
+        }
+        
+        function selectStackCategory(category, btn) {
+            stackCategory = category;
+            document.querySelectorAll('#stackCategories .category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderStacks();
+        }
+        
+        function filterStacks() {
+            stackSearch = document.getElementById('stackSearch').value.toLowerCase();
+            renderStacks();
+        }
+
+        function renderStacks() {
+            const container = document.getElementById('stacksGrid');
+            const emptyState = document.getElementById('emptyState');
+            
+            const configuredItems = allItems.filter(item => stacksData[item.shortname]);
+            let filteredItems = configuredItems;
+            
+            if (stackCategory !== 'all') {
+                filteredItems = filteredItems.filter(item => item.category === stackCategory);
+            }
+            if (stackSearch) {
+                filteredItems = filteredItems.filter(item => 
+                    item.name.toLowerCase().includes(stackSearch) || 
+                    item.shortname.toLowerCase().includes(stackSearch)
+                );
+            }
+            
+            if (configuredItems.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            container.style.display = 'grid';
+            emptyState.style.display = 'none';
+            
+            if (filteredItems.length === 0) {
+                container.innerHTML = `<div class="stacks-empty"><p>Ничего не найдено</p></div>`;
+                return;
+            }
+            
+            container.innerHTML = filteredItems.map(item => {
+                const val = stacksData[item.shortname];
+                return `
+                    <div class="stack-card modified">
+                        <div class="stack-item-header">
+                            <div class="stack-item-icon">
+                                <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'">
+                            </div>
+                            <div class="stack-item-info">
+                                <div class="stack-item-name">${item.name}</div>
+                                <div class="stack-item-shortname">${item.shortname}</div>
+                            </div>
+                        </div>
+                        <div class="stack-input-group">
+                            <label>Макс:</label>
+                            <div class="stack-input-wrapper">
+                                <input type="text" class="stack-input" value="${formatNumber(val)}" 
+                                    data-shortname="${item.shortname}"
+                                    onfocus="this.value=this.value.replace(/\\s/g,'')"
+                                    onblur="handleBlur(this)"
+                                    onkeydown="if(event.key==='Enter')this.blur()">
+                            </div>
+                            <button class="stack-reset-btn" onclick="resetStack('${item.shortname}')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function handleBlur(input) {
+            const sn = input.dataset.shortname;
+            const val = parseFormattedNumber(input.value);
+            if (val > 0) {
+                input.value = formatNumber(val);
+                saveStack(sn, val);
+            } else {
+                input.value = formatNumber(stacksData[sn] || 1);
+            }
+        }
+
+        async function saveStack(shortname, value) {
+            try {
+                const res = await fetch(`/api/stacks/${shortname}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stackSize: value })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    stacksData[shortname] = value;
+                    updateStats();
+                    showToast(`${formatNumber(value)}`, 'success');
+                }
+            } catch (e) {
+                showToast('Ошибка', 'error');
+            }
+        }
+        
+        async function resetStack(shortname) {
+            try {
+                const res = await fetch(`/api/stacks/${shortname}`, { method: 'DELETE' });
+                if ((await res.json()).success) {
+                    delete stacksData[shortname];
+                    renderStacks();
+                    updateStats();
+                    showToast('Удалено', 'success');
+                }
+            } catch (e) {
+                showToast('Ошибка', 'error');
+            }
+        }
+        
+        async function clearAllStacks() {
+            if (!confirm('Сбросить все стаки?')) return;
+            try {
+                const res = await fetch('/api/stacks', { method: 'DELETE' });
+                if ((await res.json()).success) {
+                    Object.keys(stacksData).forEach(k => delete stacksData[k]);
+                    renderStacks();
+                    updateStats();
+                    showToast('Очищено', 'success');
+                }
+            } catch (e) {
+                showToast('Ошибка', 'error');
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('totalItems').textContent = formatNumber(allItems.length);
+            document.getElementById('modifiedItems').textContent = formatNumber(Object.keys(stacksData).length);
+            document.getElementById('defaultItems').textContent = formatNumber(allItems.length - Object.keys(stacksData).length);
+        }
+        
+        async function exportStacks() {
+            const res = await fetch('/api/stacks/export');
+            const data = await res.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'SimpleStackSize.json';
+            a.click();
+            showToast('Экспортировано', 'success');
+        }
+        
+        function importStacks() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const text = await file.text();
+                const data = JSON.parse(text);
+                const res = await fetch('/api/stacks/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if ((await res.json()).success) {
+                    Object.keys(stacksData).forEach(k => delete stacksData[k]);
+                    Object.assign(stacksData, data);
+                    renderStacks();
+                    updateStats();
+                    showToast('Импортировано', 'success');
+                }
+            };
+            input.click();
+        }
+
+        // Picker
+        function openStackPicker() {
+            document.getElementById('stackPickerModal').classList.add('active');
+            document.getElementById('pickerSearch').value = '';
+            pickerSearch = '';
+            pickerCat = 'all';
+            renderPickerCategories();
+            renderPickerGrid();
+        }
+        
+        function closeStackPicker() {
+            document.getElementById('stackPickerModal').classList.remove('active');
+        }
+        
+        document.getElementById('stackPickerModal').onclick = function(e) {
+            if (e.target === this) closeStackPicker();
+        };
+        
+        function renderPickerCategories() {
+            const c = document.getElementById('pickerCategories');
+            c.innerHTML = `
+                <button class="category-btn active" onclick="selectPickerCat('all', this)">Все</button>
+                ${categories.map(cat => `
+                    <button class="category-btn" onclick="selectPickerCat('${cat}', this)">${cat}</button>
+                `).join('')}
+            `;
+        }
+        
+        function selectPickerCat(cat, btn) {
+            pickerCat = cat;
+            document.querySelectorAll('#pickerCategories .category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderPickerGrid();
+        }
+        
+        function filterPicker() {
+            pickerSearch = document.getElementById('pickerSearch').value.toLowerCase();
+            renderPickerGrid();
+        }
+        
+        function scrollPickerCats(dir) {
+            document.getElementById('pickerCategories').scrollBy({ left: dir * 200, behavior: 'smooth' });
+        }
+        
+        function renderPickerGrid() {
+            const c = document.getElementById('pickerGrid');
+            let items = allItems;
+            
+            if (pickerCat !== 'all') items = items.filter(i => i.category === pickerCat);
+            if (pickerSearch) items = items.filter(i => 
+                i.name.toLowerCase().includes(pickerSearch) || 
+                i.shortname.toLowerCase().includes(pickerSearch)
+            );
+            
+            if (!items.length) {
+                c.innerHTML = '<div class="empty-state"><p>Ничего не найдено</p></div>';
+                return;
+            }
+            
+            c.innerHTML = items.map(item => {
+                const added = !!stacksData[item.shortname];
+                return `
+                    <div class="item-card ${added ? 'selected' : ''}" onclick="addStackItem('${item.shortname}')">
+                        <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'">
+                        <span>${item.name}</span>
+                        ${added ? '<div class="item-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function addStackItem(shortname) {
+            if (stacksData[shortname]) {
+                showToast('Уже добавлен', 'error');
+                return;
+            }
+            const val = 1000;
+            try {
+                const res = await fetch(`/api/stacks/${shortname}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stackSize: val })
+                });
+                if ((await res.json()).success) {
+                    stacksData[shortname] = val;
+                    renderStacks();
+                    updateStats();
+                    renderPickerGrid();
+                    showToast('Добавлено', 'success');
+                }
+            } catch (e) {
+                showToast('Ошибка', 'error');
+            }
+        }
+
+        // Toast
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = msg;
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+            }
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+        
+        // Theme
+        function toggleThemeDropdown() {
+            document.getElementById('themeDropdownMenu')?.classList.toggle('active');
+        }
+        
+        function selectTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('lootEditorTheme', theme);
+            document.getElementById('themeDropdownMenu')?.classList.remove('active');
+            const names = { light: 'Светлая', dark: 'Тёмная', rust: 'Rust', blood: 'Blood' };
+            const el = document.getElementById('themeCurrentName');
+            if (el) el.textContent = names[theme] || theme;
+            document.querySelectorAll('.theme-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.value === theme);
+            });
+        }
+        
+        // Init theme
+        (function() {
+            const theme = localStorage.getItem('lootEditorTheme') || 'dark';
+            selectTheme(theme);
+        })();
+        
+        initStacks();
+    </script>
+</body>
+</html>

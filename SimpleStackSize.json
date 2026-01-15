@@ -1,0 +1,10 @@
+{
+  "scrap": 10000,
+  "wood": 50000,
+  "stones": 50000,
+  "metal.fragments": 10000,
+  "sulfur": 10000,
+  "cloth": 5000,
+  "barricade.wood.cover": 1000,
+  "barricade.wood": 1000
+}
