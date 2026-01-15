@@ -123,11 +123,14 @@
     <script>
         // Все данные из localStorage - у каждого пользователя свои
         const STORAGE_KEY = 'lootEditor_stacks';
+        const UNEDITED_STACKS_KEY = 'lootEditor_uneditedStacks';
         const allItems = <%- JSON.stringify(items) %>;
         const categories = <%- JSON.stringify(categories) %>;
         
         // Загружаем стаки из localStorage
         let stacksData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        // Нередактированные стаки (только добавленные, но не изменённые)
+        let uneditedStacks = JSON.parse(localStorage.getItem(UNEDITED_STACKS_KEY) || '[]');
         
         let stackCategory = 'all';
         let stackSearch = '';
@@ -145,6 +148,18 @@
         // Сохранение в localStorage
         function saveToStorage() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(stacksData));
+        }
+        
+        function saveUneditedStacks() {
+            localStorage.setItem(UNEDITED_STACKS_KEY, JSON.stringify(uneditedStacks));
+        }
+        
+        function markStackEdited(shortname) {
+            const idx = uneditedStacks.indexOf(shortname);
+            if (idx !== -1) {
+                uneditedStacks.splice(idx, 1);
+                saveUneditedStacks();
+            }
         }
         
         function initStacks() {
@@ -208,8 +223,10 @@
             
             container.innerHTML = filteredItems.map(item => {
                 const val = stacksData[item.shortname];
+                const isUnedited = uneditedStacks.includes(item.shortname);
                 return `
-                    <div class="stack-card modified">
+                    <div class="stack-card modified ${isUnedited ? 'unedited' : ''}">
+                        ${isUnedited ? '<span class="stack-unedited-dot"></span>' : ''}
                         <div class="stack-item-header">
                             <div class="stack-item-icon">
                                 <img src="/icons/${item.shortname}.png" onerror="this.src='/icons/rock.png'">
@@ -253,12 +270,15 @@
         function saveStack(shortname, value) {
             stacksData[shortname] = value;
             saveToStorage();
+            markStackEdited(shortname);
+            renderStacks();
             updateStats();
             showToast(`${formatNumber(value)}`, 'success');
         }
         
         function resetStack(shortname) {
             delete stacksData[shortname];
+            markStackEdited(shortname);
             saveToStorage();
             renderStacks();
             updateStats();
@@ -268,7 +288,9 @@
         function clearAllStacks() {
             if (!confirm('Сбросить все стаки?')) return;
             stacksData = {};
+            uneditedStacks = [];
             saveToStorage();
+            saveUneditedStacks();
             renderStacks();
             updateStats();
             showToast('Очищено', 'success');
@@ -300,7 +322,9 @@
                     const text = await file.text();
                     const data = JSON.parse(text);
                     stacksData = data;
+                    uneditedStacks = [];
                     saveToStorage();
+                    saveUneditedStacks();
                     renderStacks();
                     updateStats();
                     showToast('Импортировано', 'success');
@@ -389,6 +413,11 @@
             }
             const val = 1000;
             stacksData[shortname] = val;
+            // Добавляем в нередактированные
+            if (!uneditedStacks.includes(shortname)) {
+                uneditedStacks.push(shortname);
+                saveUneditedStacks();
+            }
             saveToStorage();
             renderStacks();
             updateStats();
