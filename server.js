@@ -218,6 +218,76 @@ app.get('/players', (req, res) => {
     });
 });
 
+// ============ PAGE VIEWS COUNTER ============
+
+let pageViewsData = { total: 0, unique: 0, visitors: {} };
+const pageViewsFile = path.join(__dirname, 'pageviews.json');
+
+// Загрузка данных просмотров
+if (fs.existsSync(pageViewsFile)) {
+    try {
+        pageViewsData = JSON.parse(fs.readFileSync(pageViewsFile, 'utf8'));
+        console.log(`[PageViews] Загружено: ${pageViewsData.unique} уникальных посетителей`);
+    } catch (e) {
+        pageViewsData = { total: 0, unique: 0, visitors: {} };
+    }
+}
+
+function savePageViews() {
+    try {
+        fs.writeFileSync(pageViewsFile, JSON.stringify(pageViewsData, null, 2));
+    } catch (e) {
+        console.error('[PageViews] Ошибка сохранения:', e);
+    }
+}
+
+function getVisitorId(req) {
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+    const ua = req.headers['user-agent'] || '';
+    // Создаём простой хэш из IP + User-Agent
+    return Buffer.from(ip + ua).toString('base64').slice(0, 32);
+}
+
+function trackPageView(req, page) {
+    const visitorId = getVisitorId(req);
+    const today = new Date().toISOString().split('T')[0];
+    const key = `${visitorId}_${page}_${today}`;
+    
+    pageViewsData.total++;
+    
+    if (!pageViewsData.visitors[key]) {
+        pageViewsData.visitors[key] = true;
+        pageViewsData.unique++;
+    }
+    
+    // Очищаем старые записи (старше 7 дней)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    
+    for (const k of Object.keys(pageViewsData.visitors)) {
+        const dateMatch = k.match(/_([\d-]+)$/);
+        if (dateMatch && dateMatch[1] < weekAgoStr) {
+            delete pageViewsData.visitors[k];
+        }
+    }
+    
+    savePageViews();
+    
+    return {
+        total: pageViewsData.total,
+        unique: pageViewsData.unique
+    };
+}
+
+// API для получения статистики просмотров
+app.get('/api/pageviews', (req, res) => {
+    res.json({
+        total: pageViewsData.total,
+        unique: pageViewsData.unique
+    });
+});
+
 // ============ HIT STATS ROUTES ============
 
 // Хранилище данных HitStats в памяти
@@ -430,8 +500,10 @@ app.get('/api/hitstats/player/:steamId', (req, res) => {
 
 // Страница со списком всех игроков HitStats
 app.get('/stats', (req, res) => {
+    const views = trackPageView(req, 'stats');
     res.render('hitstats', {
-        hitStatsData: hitStatsCache
+        hitStatsData: hitStatsCache,
+        pageViews: views
     });
 });
 
@@ -702,6 +774,7 @@ app.get('/api/steam/profiles', async (req, res) => {
                     steamid: player.steamid,
                     personaname: player.personaname,
                     avatar: player.avatarmedium || player.avatar,
+                    avatarmedium: player.avatarmedium || player.avatar,
                     avatarfull: player.avatarfull,
                     profileurl: player.profileurl
                 };
