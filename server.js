@@ -220,39 +220,226 @@ app.get('/players', (req, res) => {
 
 // ============ HIT STATS ROUTES ============
 
+// Хранилище данных HitStats в памяти
+let hitStatsCache = {};
+const hitStatsFile = path.join(__dirname, 'HitStats.json');
+
+// Загрузка данных из файла при старте (если есть)
+if (fs.existsSync(hitStatsFile)) {
+    try {
+        hitStatsCache = JSON.parse(fs.readFileSync(hitStatsFile, 'utf8'));
+        console.log(`[HitStats] Загружено ${Object.keys(hitStatsCache).length} игроков из файла`);
+    } catch (e) {
+        hitStatsCache = {};
+    }
+}
+
+// Сохранение данных в файл
+function saveHitStats() {
+    try {
+        fs.writeFileSync(hitStatsFile, JSON.stringify(hitStatsCache, null, 2));
+    } catch (e) {
+        console.error('[HitStats] Ошибка сохранения:', e);
+    }
+}
+
+// ========== HIT STATS API ==========
+
+// POST /api/hitstats/update - Обновление статистики игрока (от плагина)
+app.post('/api/hitstats/update', (req, res) => {
+    try {
+        const { steamId, name, hitData } = req.body;
+        
+        if (!steamId) {
+            return res.status(400).json({ error: 'steamId is required' });
+        }
+        
+        // Инициализируем игрока если его нет
+        if (!hitStatsCache[steamId]) {
+            hitStatsCache[steamId] = {
+                Name: name || 'Unknown',
+                Head: 0,
+                Neck: 0,
+                Chest: 0,
+                Spine: 0,
+                Pelvis: 0,
+                LeftArm: 0,
+                RightArm: 0,
+                LeftHand: 0,
+                RightHand: 0,
+                LeftLeg: 0,
+                RightLeg: 0,
+                LeftFoot: 0,
+                RightFoot: 0,
+                Body: 0,
+                Total: 0
+            };
+        }
+        
+        // Обновляем имя если передано
+        if (name) {
+            hitStatsCache[steamId].Name = name;
+        }
+        
+        // Обновляем статистику
+        if (hitData) {
+            const validParts = ['Head', 'Neck', 'Chest', 'Spine', 'Pelvis', 'LeftArm', 'RightArm', 'LeftHand', 'RightHand', 'LeftLeg', 'RightLeg', 'LeftFoot', 'RightFoot', 'Body'];
+            
+            for (const [part, value] of Object.entries(hitData)) {
+                if (validParts.includes(part) && typeof value === 'number') {
+                    hitStatsCache[steamId][part] = value;
+                }
+            }
+            
+            // Пересчитываем Total
+            hitStatsCache[steamId].Total = validParts.reduce((sum, part) => sum + (hitStatsCache[steamId][part] || 0), 0);
+        }
+        
+        // Сохраняем в файл
+        saveHitStats();
+        
+        res.json({ success: true, player: hitStatsCache[steamId] });
+    } catch (e) {
+        console.error('[HitStats API] Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// POST /api/hitstats/hit - Добавить одно попадание (от плагина)
+app.post('/api/hitstats/hit', (req, res) => {
+    try {
+        const { steamId, name, bodyPart } = req.body;
+        
+        if (!steamId || !bodyPart) {
+            return res.status(400).json({ error: 'steamId and bodyPart are required' });
+        }
+        
+        const validParts = ['Head', 'Neck', 'Chest', 'Spine', 'Pelvis', 'LeftArm', 'RightArm', 'LeftHand', 'RightHand', 'LeftLeg', 'RightLeg', 'LeftFoot', 'RightFoot', 'Body'];
+        
+        if (!validParts.includes(bodyPart)) {
+            return res.status(400).json({ error: 'Invalid bodyPart', validParts });
+        }
+        
+        // Инициализируем игрока если его нет
+        if (!hitStatsCache[steamId]) {
+            hitStatsCache[steamId] = {
+                Name: name || 'Unknown',
+                Head: 0, Neck: 0, Chest: 0, Spine: 0, Pelvis: 0,
+                LeftArm: 0, RightArm: 0, LeftHand: 0, RightHand: 0,
+                LeftLeg: 0, RightLeg: 0, LeftFoot: 0, RightFoot: 0,
+                Body: 0, Total: 0
+            };
+        }
+        
+        // Обновляем имя
+        if (name) {
+            hitStatsCache[steamId].Name = name;
+        }
+        
+        // Добавляем попадание
+        hitStatsCache[steamId][bodyPart]++;
+        hitStatsCache[steamId].Total++;
+        
+        // Сохраняем
+        saveHitStats();
+        
+        res.json({ 
+            success: true, 
+            steamId,
+            bodyPart,
+            newValue: hitStatsCache[steamId][bodyPart],
+            total: hitStatsCache[steamId].Total
+        });
+    } catch (e) {
+        console.error('[HitStats API] Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// POST /api/hitstats/bulk - Массовое обновление (полная синхронизация от плагина)
+app.post('/api/hitstats/bulk', (req, res) => {
+    try {
+        const { players } = req.body;
+        
+        if (!players || typeof players !== 'object') {
+            return res.status(400).json({ error: 'players object is required' });
+        }
+        
+        // Заменяем все данные
+        hitStatsCache = players;
+        
+        // Сохраняем
+        saveHitStats();
+        
+        res.json({ 
+            success: true, 
+            playersCount: Object.keys(hitStatsCache).length 
+        });
+    } catch (e) {
+        console.error('[HitStats API] Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// DELETE /api/hitstats/player/:steamId - Удалить игрока
+app.delete('/api/hitstats/player/:steamId', (req, res) => {
+    try {
+        const { steamId } = req.params;
+        
+        if (hitStatsCache[steamId]) {
+            delete hitStatsCache[steamId];
+            saveHitStats();
+            res.json({ success: true, message: `Player ${steamId} deleted` });
+        } else {
+            res.status(404).json({ error: 'Player not found' });
+        }
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// DELETE /api/hitstats/clear - Очистить всю статистику
+app.delete('/api/hitstats/clear', (req, res) => {
+    try {
+        hitStatsCache = {};
+        saveHitStats();
+        res.json({ success: true, message: 'All stats cleared' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET /api/hitstats - Получить всю статистику
+app.get('/api/hitstats', (req, res) => {
+    res.json(hitStatsCache);
+});
+
+// GET /api/hitstats/player/:steamId - Получить статистику игрока
+app.get('/api/hitstats/player/:steamId', (req, res) => {
+    const { steamId } = req.params;
+    const player = hitStatsCache[steamId];
+    
+    if (player) {
+        res.json({ steamId, ...player });
+    } else {
+        res.status(404).json({ error: 'Player not found' });
+    }
+});
+
+// ========== HIT STATS PAGES ==========
+
 // Страница со списком всех игроков HitStats
 app.get('/stats', (req, res) => {
-    const hitStatsFile = path.join(__dirname, 'HitStats.json');
-    let hitStatsData = {};
-    
-    if (fs.existsSync(hitStatsFile)) {
-        try {
-            hitStatsData = JSON.parse(fs.readFileSync(hitStatsFile, 'utf8'));
-        } catch (e) {
-            hitStatsData = {};
-        }
-    }
-    
     res.render('hitstats', {
-        hitStatsData
+        hitStatsData: hitStatsCache
     });
 });
 
 // Страница статистики конкретного игрока
 app.get('/stats/:steamId', (req, res) => {
     const steamId = req.params.steamId;
-    const hitStatsFile = path.join(__dirname, 'HitStats.json');
-    let hitStatsData = {};
+    const playerStats = hitStatsCache[steamId];
     
-    if (fs.existsSync(hitStatsFile)) {
-        try {
-            hitStatsData = JSON.parse(fs.readFileSync(hitStatsFile, 'utf8'));
-        } catch (e) {
-            hitStatsData = {};
-        }
-    }
-    
-    const playerStats = hitStatsData[steamId];
     if (!playerStats) {
         return res.redirect('/stats');
     }
@@ -260,24 +447,8 @@ app.get('/stats/:steamId', (req, res) => {
     res.render('hitstats-player', {
         steamId,
         playerStats,
-        allPlayers: hitStatsData
+        allPlayers: hitStatsCache
     });
-});
-
-// API для получения HitStats данных
-app.get('/api/hitstats', (req, res) => {
-    const hitStatsFile = path.join(__dirname, 'HitStats.json');
-    let hitStatsData = {};
-    
-    if (fs.existsSync(hitStatsFile)) {
-        try {
-            hitStatsData = JSON.parse(fs.readFileSync(hitStatsFile, 'utf8'));
-        } catch (e) {
-            hitStatsData = {};
-        }
-    }
-    
-    res.json(hitStatsData);
 });
 
 // Страница настройки стаков
