@@ -1269,6 +1269,6 @@ function getContainers() {
 
 // ============ START ============
 
-app.listen(PORT, () => {
-    console.log(`Loot Editor запущен: http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Loot Editor запущен: http://0.0.0.0:${PORT}`);
 });
