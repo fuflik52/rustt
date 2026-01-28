@@ -317,8 +317,9 @@
         .view-btn {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            padding: 8px 14px;
+            padding: 8px 12px;
             background: rgba(113, 140, 68, 0.1);
             border: 1px solid rgba(113, 140, 68, 0.3);
             border-radius: 8px;
@@ -326,12 +327,14 @@
             font-size: 12px;
             font-weight: 500;
             transition: all 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
         }
         .view-btn:hover {
             background: rgba(113, 140, 68, 0.2);
             border-color: #718C44;
         }
-        .view-btn svg { width: 14px; height: 14px; }
+        .view-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 
         /* Mobile stats */
         @media (max-width: 800px) {
