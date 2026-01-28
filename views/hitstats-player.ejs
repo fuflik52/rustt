@@ -26,6 +26,15 @@
         .stat-value { font-size: 32px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
         .stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
         
+        /* Timestamp cards */
+        .stats-timestamps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+        @media (max-width: 600px) { .stats-timestamps { grid-template-columns: 1fr; } }
+        .timestamp-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+        .timestamp-card svg { width: 24px; height: 24px; color: #718C44; flex-shrink: 0; }
+        .timestamp-info { display: flex; flex-direction: column; gap: 2px; }
+        .timestamp-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+        .timestamp-value { font-size: 15px; font-weight: 600; color: var(--text); }
+        
         .body-section { display: grid; grid-template-columns: 1fr 400px; gap: 32px; margin-bottom: 32px; }
         @media (max-width: 900px) { .body-section { grid-template-columns: 1fr; } }
         
@@ -227,6 +236,30 @@
             <div class="stat-card">
                 <div class="stat-value" style="color: #8b5cf6;"><%= chest + spine + pelvis %></div>
                 <div class="stat-label">В корпус</div>
+            </div>
+        </div>
+        
+        <!-- Временные метки статистики -->
+        <div class="stats-timestamps">
+            <div class="timestamp-card">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <div class="timestamp-info">
+                    <span class="timestamp-label">Статистика ведётся с</span>
+                    <span class="timestamp-value" id="firstHitTime"><%= playerStats.FirstHitTime ? new Date(playerStats.FirstHitTime).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Нет данных' %></span>
+                </div>
+            </div>
+            <div class="timestamp-card">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                <div class="timestamp-info">
+                    <span class="timestamp-label">Последнее обновление</span>
+                    <span class="timestamp-value" id="lastUpdateTime"><%= playerStats.LastUpdateTime ? new Date(playerStats.LastUpdateTime).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Нет данных' %></span>
+                </div>
             </div>
         </div>
         

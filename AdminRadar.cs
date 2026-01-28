@@ -71,6 +71,8 @@ namespace Oxide.Plugins
             public int RightFoot;
             public int Body;
             public int Total;
+            public string FirstHitTime;
+            public string LastUpdateTime;
         }
 
         class PlayerSettings
@@ -196,7 +198,9 @@ namespace Oxide.Plugins
                     ["LeftFoot"] = stats.LeftFoot,
                     ["RightFoot"] = stats.RightFoot,
                     ["Body"] = stats.Body,
-                    ["Total"] = stats.Total
+                    ["Total"] = stats.Total,
+                    ["FirstHitTime"] = stats.FirstHitTime ?? DateTime.UtcNow.ToString("o"),
+                    ["LastUpdateTime"] = stats.LastUpdateTime ?? DateTime.UtcNow.ToString("o")
                 };
             }
 
@@ -545,12 +549,15 @@ namespace Oxide.Plugins
 
         void RecordHit(BasePlayer attacker, int boneType)
         {
+            string nowUtc = DateTime.UtcNow.ToString("o");
             if (!_hitStats.TryGetValue(attacker.userID, out var stats))
             {
                 stats = new HitStatsData();
+                stats.FirstHitTime = nowUtc;
                 _hitStats[attacker.userID] = stats;
             }
             stats.Name = attacker.displayName;
+            stats.LastUpdateTime = nowUtc;
             stats.Total++;
 
             switch (boneType)
