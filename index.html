@@ -42,6 +42,26 @@
                     </svg>
                     Настройка стаков
                 </button>
+                
+                <!-- Battle Pass Button -->
+                <button class="btn-add-container" onclick="window.location.href='/battlepass'" style="margin-top: 8px; background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(59,130,246,0.1) 100%); border-color: #8b5cf6; color: #8b5cf6;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    Battle Pass
+                </button>
+                
+                <!-- Hit Stats Button -->
+                <button class="btn-add-container" onclick="window.location.href='/stats'" style="margin-top: 8px; background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(249,115,22,0.1) 100%); border-color: #ef4444; color: #ef4444;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="6"/>
+                        <circle cx="12" cy="12" r="2"/>
+                    </svg>
+                    Hit Stats
+                </button>
             </div>
         </aside>
         
@@ -75,6 +95,22 @@
                                 <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
                             </svg>
                             Настройка стаков
+                        </button>
+                        <button class="btn-welcome-primary" onclick="window.location.href='/battlepass'" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            Battle Pass
+                        </button>
+                        <button class="btn-welcome-primary" onclick="window.location.href='/stats'" style="background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <circle cx="12" cy="12" r="6"/>
+                                <circle cx="12" cy="12" r="2"/>
+                            </svg>
+                            Hit Stats
                         </button>
                         <button class="btn-welcome-secondary" onclick="importJson()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

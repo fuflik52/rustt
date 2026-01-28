@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title>Hit Stats - <%= playerStats.Name || steamId %></title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        html, body { height: 100%; overflow-y: auto; }
+        .player-page { padding: 40px; max-width: 1200px; margin: 0 auto; min-height: 100vh; padding-bottom: 60px; }
+        .player-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+        .player-title-section { display: flex; align-items: center; gap: 20px; }
+        .player-avatar-large { width: 80px; height: 80px; border-radius: 16px; background: var(--bg-tertiary); border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .player-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+        .player-avatar-large svg { width: 40px; height: 40px; color: var(--text-muted); }
+        .player-title { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .player-steamid { color: var(--text-secondary); font-size: 14px; font-family: monospace; background: var(--bg-tertiary); padding: 4px 12px; border-radius: 6px; display: inline-block; }
+        .back-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text); border-radius: 8px; text-decoration: none; font-size: 13px; transition: all 0.2s; }
+        .back-btn:hover { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+        .back-btn svg { width: 16px; height: 16px; }
+        
+        .stats-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        @media (max-width: 900px) { .stats-overview { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { .stats-overview { grid-template-columns: 1fr; } }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+        .stat-card.highlight { border-color: var(--accent); background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(99,102,241,0.1) 100%); }
+        .stat-value { font-size: 32px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
+        
+        .body-section { display: grid; grid-template-columns: 1fr 400px; gap: 32px; margin-bottom: 32px; }
+        @media (max-width: 900px) { .body-section { grid-template-columns: 1fr; } }
+        
+        .body-stats-list { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+        .body-stats-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .body-stats-title svg { width: 20px; height: 20px; color: var(--accent); }
+        
+        /* Pie Chart - Donut Style */
+        .pie-chart-container { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+        .pie-chart { width: 240px; height: 240px; }
+        .pie-bg-ring { fill: none; stroke: #2a2f38; stroke-width: 28; }
+        .pie-segment { 
+            fill: none;
+            stroke-width: 28;
+            stroke-linecap: round;
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            transform-origin: center;
+        }
+        .pie-segment:hover { 
+            stroke-width: 34;
+            filter: brightness(1.2) drop-shadow(0 0 8px currentColor);
+        }
+        .pie-center-circle {
+            fill: #1a1d24;
+        }
+        
+        .pie-legend { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 8px 24px;
+            width: 100%;
+        }
+        .legend-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 13px;
+            padding: 6px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+        }
+        .legend-item:hover {
+            background: rgba(255,255,255,0.05);
+            padding-left: 8px;
+        }
+        .legend-color { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+            flex-shrink: 0;
+            box-shadow: 0 0 6px currentColor;
+        }
+        .legend-name { 
+            color: var(--text); 
+            flex: 1;
+        }
+        .legend-value { 
+            color: var(--text); 
+            font-weight: 600;
+            min-width: 30px;
+            text-align: right;
+        }
+        .legend-percent { 
+            color: var(--text-muted); 
+            font-size: 11px;
+            min-width: 45px;
+            text-align: right;
+        }
+        
+        .pie-tooltip {
+            position: fixed;
+            background: linear-gradient(135deg, #1a1d24 0%, #12151a 100%);
+            color: #f0f0f5;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1000;
+            border: 1px solid #718C44;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .pie-tooltip.visible { opacity: 1; }
+        
+        /* Human Body Visualization */
+        .body-visual { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+        .body-visual-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 20px; text-align: center; }
+        
+        .human-body-svg { width: 280px; height: 400px; }
+        .body-silhouette { transition: all 0.3s; }
+        .human-body-svg .body-zone { 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            fill: transparent;
+            stroke: rgba(113, 140, 68, 0.35);
+            stroke-width: 1;
+        }
+        .human-body-svg .body-zone:hover { 
+            fill: rgba(113, 140, 68, 0.7);
+            stroke: #8aa854;
+            stroke-width: 2;
+            filter: drop-shadow(0 0 12px rgba(113, 140, 68, 0.6));
+        }
+        
+        .hit-label { font-size: 11px; font-weight: 600; fill: #9ca3af; pointer-events: none; text-anchor: middle; dominant-baseline: middle; transition: all 0.2s; }
+        
+        .zone-tooltip { 
+            position: fixed; 
+            background: linear-gradient(135deg, #1a1d24 0%, #12151a 100%);
+            color: #f0f0f5; 
+            padding: 12px 18px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            pointer-events: none; 
+            z-index: 1000; 
+            border: 1px solid #718C44;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(113, 140, 68, 0.3); 
+            opacity: 0; 
+            transition: opacity 0.15s;
+        }
+        .zone-tooltip.visible { opacity: 1; }
+        .zone-tooltip strong { color: #718C44; }
+        
+        .body-legend { display: none; }
+    </style>
+</head>
+<body>
+    <%
+    const total = playerStats.Total || 1;
+    const head = playerStats.Head || 0;
+    const neck = playerStats.Neck || 0;
+    const chest = playerStats.Chest || 0;
+    const spine = playerStats.Spine || 0;
+    const pelvis = playerStats.Pelvis || 0;
+    const leftArm = playerStats.LeftArm || 0;
+    const rightArm = playerStats.RightArm || 0;
+    const leftHand = playerStats.LeftHand || 0;
+    const rightHand = playerStats.RightHand || 0;
+    const leftLeg = playerStats.LeftLeg || 0;
+    const rightLeg = playerStats.RightLeg || 0;
+    const leftFoot = playerStats.LeftFoot || 0;
+    const rightFoot = playerStats.RightFoot || 0;
+    const body = playerStats.Body || 0;
+    
+    const arms = leftArm + rightArm;
+    const hands = leftHand + rightHand;
+    const legs = leftLeg + rightLeg;
+    const feet = leftFoot + rightFoot;
+    
+    const headRate = (head / total * 100).toFixed(1);
+    
+    function getHitClass(hits, maxHits) {
+        if (hits === 0) return 'no-hits';
+        const ratio = hits / maxHits;
+        if (ratio < 0.25) return 'low-hits';
+        if (ratio < 0.5) return 'medium-hits';
+        return 'high-hits';
+    }
+    
+    const maxHits = Math.max(head, neck, chest, spine, pelvis, leftArm, rightArm, leftHand, rightHand, leftLeg, rightLeg, leftFoot, rightFoot, body);
+    %>
+    
+    <div class="player-page">
+        <div class="player-header">
+            <div class="player-title-section">
+                <div class="player-avatar-large" id="playerAvatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="player-title"><%= playerStats.Name || 'Unknown Player' %></h1>
+                    <span class="player-steamid"><%= steamId %></span>
+                </div>
+            </div>
+            <a href="/stats" class="back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Назад к списку
+            </a>
+        </div>
+        
+        <div class="stats-overview">
+            <div class="stat-card highlight">
+                <div class="stat-value"><%= total %></div>
+                <div class="stat-label">Всего попаданий</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #ef4444;"><%= head %></div>
+                <div class="stat-label">Хедшотов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #10b981;"><%= headRate %>%</div>
+                <div class="stat-label">Headshot %</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: #8b5cf6;"><%= chest + spine + pelvis %></div>
+                <div class="stat-label">В корпус</div>
+            </div>
+        </div>
+        
+        <div class="body-section">
+            <div class="body-stats-list">
+                <div class="body-stats-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 2a10 10 0 0 1 10 10"/>
+                        <path d="M12 12L12 2"/>
+                        <path d="M12 12L22 12"/>
+                    </svg>
+                    Статистика по частям тела
+                </div>
+                
+                <div class="pie-chart-container">
+                    <%
+                    const pieData = [
+                        { name: 'Голова', value: head, color: '#ef4444' },
+                        { name: 'Шея', value: neck, color: '#f97316' },
+                        { name: 'Грудь', value: chest, color: '#eab308' },
+                        { name: 'Позвоночник', value: spine, color: '#84cc16' },
+                        { name: 'Таз', value: pelvis, color: '#10b981' },
+                        { name: 'Руки', value: arms, color: '#3b82f6' },
+                        { name: 'Кисти', value: hands, color: '#6366f1' },
+                        { name: 'Ноги', value: legs, color: '#8b5cf6' },
+                        { name: 'Ступни', value: feet, color: '#ec4899' },
+                        { name: 'Другое', value: body, color: '#6b7280' }
+                    ].filter(d => d.value > 0);
+                    
+                    const pieR = 70;
+                    const pieCircumference = 2 * Math.PI * pieR;
+                    let pieCumulativePercent = 0;
+                    %>
+                    <svg class="pie-chart" viewBox="0 0 200 200">
+                        <!-- Background ring -->
+                        <circle class="pie-bg-ring" cx="100" cy="100" r="70"/>
+                        
+                        <!-- Segments -->
+                        <% pieData.forEach((slice, i) => {
+                            const pct = slice.value / total;
+                            const dashOffset = pieCircumference * (1 - pct);
+                            const rot = pieCumulativePercent * 360 - 90;
+                        %>
+                        <circle class="pie-segment" 
+                                cx="100" cy="100" r="70"
+                                stroke="<%= slice.color %>"
+                                stroke-dasharray="<%= pieCircumference %>"
+                                stroke-dashoffset="<%= dashOffset %>"
+                                transform="rotate(<%= rot %> 100 100)"
+                                data-name="<%= slice.name %>" 
+                                data-value="<%= slice.value %>" 
+                                data-percent="<%= (pct * 100).toFixed(1) %>"/>
+                        <% pieCumulativePercent += pct; }); %>
+                        
+                        <!-- Center circle -->
+                        <circle class="pie-center-circle" cx="100" cy="100" r="48"/>
+                        <text x="100" y="95" text-anchor="middle" fill="#fff" font-size="28" font-weight="700"><%= total %></text>
+                        <text x="100" y="115" text-anchor="middle" fill="#9ca3af" font-size="10">ПОПАДАНИЙ</text>
+                    </svg>
+                    
+                    <div class="pie-legend">
+                        <% pieData.forEach(slice => { %>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: <%= slice.color %>"></span>
+                            <span class="legend-name"><%= slice.name %></span>
+                            <span class="legend-value"><%= slice.value %></span>
+                            <span class="legend-percent"><%= (slice.value/total*100).toFixed(1) %>%</span>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+                
+                <div class="pie-tooltip" id="pieTooltip"></div>
+            </div>
+            
+            <div class="body-visual">
+                <div class="body-visual-title">Карта попаданий</div>
+                
+                <svg class="human-body-svg" viewBox="0 0 200 340">
+                    <!-- Человеческий силуэт -->
+                    <defs>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    
+                    <!-- Силуэт человека (залитый фон) -->
+                    <path class="body-silhouette" fill="#2a2f38" stroke="#3a4048" stroke-width="2" d="M100,5 
+                        C118,5 132,20 132,42 C132,56 124,68 112,74 
+                        L114,80 
+                        C134,84 152,96 158,115 L164,150 C166,158 172,168 178,180 
+                        C182,188 178,195 170,195 L155,195 C150,195 146,190 146,184 L142,160 L138,145 
+                        L138,180 L142,240 L148,295 C150,308 144,318 132,320 L120,322 C112,323 106,317 104,308 L100,265 
+                        L96,308 C94,317 88,323 80,322 L68,320 C56,318 50,308 52,295 L58,240 L62,180 
+                        L62,145 L58,160 L54,184 C54,190 50,195 45,195 L30,195 C22,195 18,188 22,180 
+                        C28,168 34,158 36,150 L42,115 C48,96 66,84 86,80 
+                        L88,74 C76,68 68,56 68,42 C68,20 82,5 100,5 Z"/>
+                    
+                    <!-- Голова -->
+                    <ellipse class="body-zone" 
+                             cx="100" cy="38" rx="32" ry="35"
+                             data-zone="head" data-hits="<%= head %>" data-percent="<%= (head/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="100" y="42"><%= head %></text>
+                    
+                    <!-- Шея -->
+                    <rect class="body-zone" 
+                          x="86" y="68" width="28" height="14" rx="4"
+                          data-zone="neck" data-hits="<%= neck %>" data-percent="<%= (neck/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="100" y="78"><%= neck %></text>
+                    
+                    <!-- Грудь -->
+                    <path class="body-zone" 
+                          d="M86,82 L114,82 C134,86 150,94 156,112 L156,115 L44,115 L44,112 C50,94 66,86 86,82 Z"
+                          data-zone="chest" data-hits="<%= chest %>" data-percent="<%= (chest/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="100" y="100"><%= chest %></text>
+                    
+                    <!-- Позвоночник/Живот -->
+                    <rect class="body-zone" 
+                          x="62" y="115" width="76" height="35" rx="2"
+                          data-zone="spine" data-hits="<%= spine %>" data-percent="<%= (spine/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="100" y="135"><%= spine %></text>
+                    
+                    <!-- Таз -->
+                    <path class="body-zone" 
+                          d="M62,150 L138,150 L138,180 L62,180 Z"
+                          data-zone="pelvis" data-hits="<%= pelvis %>" data-percent="<%= (pelvis/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="100" y="168"><%= pelvis %></text>
+                    
+                    <!-- Левая рука -->
+                    <path class="body-zone" 
+                          d="M36,150 C38,135 42,120 44,115 L62,115 L62,155 L54,184 C52,190 48,193 45,193 L36,150 Z"
+                          data-zone="leftArm" data-hits="<%= leftArm %>" data-percent="<%= (leftArm/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="48" y="150"><%= leftArm %></text>
+                    
+                    <!-- Правая рука -->
+                    <path class="body-zone" 
+                          d="M164,150 C162,135 158,120 156,115 L138,115 L138,155 L146,184 C148,190 152,193 155,193 L164,150 Z"
+                          data-zone="rightArm" data-hits="<%= rightArm %>" data-percent="<%= (rightArm/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="152" y="150"><%= rightArm %></text>
+                    
+                    <!-- Левая кисть -->
+                    <path class="body-zone" 
+                          d="M30,195 C22,195 18,188 22,180 C26,172 32,165 36,155 L45,193 C40,195 35,196 30,195 Z"
+                          data-zone="leftHand" data-hits="<%= leftHand %>" data-percent="<%= (leftHand/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="32" y="182"><%= leftHand %></text>
+                    
+                    <!-- Правая кисть -->
+                    <path class="body-zone" 
+                          d="M170,195 C178,195 182,188 178,180 C174,172 168,165 164,155 L155,193 C160,195 165,196 170,195 Z"
+                          data-zone="rightHand" data-hits="<%= rightHand %>" data-percent="<%= (rightHand/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="168" y="182"><%= rightHand %></text>
+                    
+                    <!-- Левая нога -->
+                    <path class="body-zone" 
+                          d="M62,180 L98,180 L98,265 L96,308 C94,317 88,322 80,321 L68,319 C56,317 52,306 54,295 L58,240 L62,180 Z"
+                          data-zone="leftLeg" data-hits="<%= leftLeg %>" data-percent="<%= (leftLeg/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="78" y="245"><%= leftLeg %></text>
+                    
+                    <!-- Правая нога -->
+                    <path class="body-zone" 
+                          d="M138,180 L102,180 L102,265 L104,308 C106,317 112,322 120,321 L132,319 C144,317 148,306 146,295 L142,240 L138,180 Z"
+                          data-zone="rightLeg" data-hits="<%= rightLeg %>" data-percent="<%= (rightLeg/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="122" y="245"><%= rightLeg %></text>
+                    
+                    <!-- Левая ступня -->
+                    <path class="body-zone" 
+                          d="M54,295 L96,308 C94,317 88,322 80,321 L68,319 C56,317 52,306 54,295 Z"
+                          data-zone="leftFoot" data-hits="<%= leftFoot %>" data-percent="<%= (leftFoot/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="76" y="312"><%= leftFoot %></text>
+                    
+                    <!-- Правая ступня -->
+                    <path class="body-zone" 
+                          d="M146,295 L104,308 C106,317 112,322 120,321 L132,319 C144,317 148,306 146,295 Z"
+                          data-zone="rightFoot" data-hits="<%= rightFoot %>" data-percent="<%= (rightFoot/total*100).toFixed(1) %>"/>
+                    <text class="hit-label" x="124" y="312"><%= rightFoot %></text>
+                </svg>
+                
+                <div class="zone-tooltip" id="zoneTooltip"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const steamId = '<%= steamId %>';
+        
+        // Загрузка Steam аватара
+        async function loadSteamAvatar() {
+            try {
+                const res = await fetch('/api/steam/profiles?ids=' + steamId);
+                if (res.ok) {
+                    const profiles = await res.json();
+                    if (profiles.length > 0 && profiles[0].avatarmedium) {
+                        document.getElementById('playerAvatar').innerHTML = `<img src="${profiles[0].avatarmedium}" alt="Avatar">`;
+                    }
+                }
+            } catch(e) {}
+        }
+        
+        loadSteamAvatar();
+        
+        // Тултипы для круговой диаграммы
+        const pieTooltip = document.getElementById('pieTooltip');
+        document.querySelectorAll('.pie-segment').forEach(slice => {
+            slice.addEventListener('mouseenter', (e) => {
+                const name = slice.dataset.name;
+                const value = slice.dataset.value;
+                const percent = slice.dataset.percent;
+                pieTooltip.innerHTML = `<strong>${name}</strong>: ${value} (${percent}%)`;
+                pieTooltip.classList.add('visible');
+            });
+            
+            slice.addEventListener('mousemove', (e) => {
+                pieTooltip.style.left = (e.clientX + 15) + 'px';
+                pieTooltip.style.top = (e.clientY + 15) + 'px';
+            });
+            
+            slice.addEventListener('mouseleave', () => {
+                pieTooltip.classList.remove('visible');
+            });
+        });
+        
+        // Тултипы для зон тела
+        const zoneNames = {
+            head: 'Голова',
+            neck: 'Шея',
+            chest: 'Грудь',
+            spine: 'Живот',
+            pelvis: 'Таз',
+            leftArm: 'Левая рука',
+            rightArm: 'Правая рука',
+            leftHand: 'Левая кисть',
+            rightHand: 'Правая кисть',
+            leftLeg: 'Левая нога',
+            rightLeg: 'Правая нога',
+            leftFoot: 'Левая ступня',
+            rightFoot: 'Правая ступня'
+        };
+        
+        const tooltip = document.getElementById('zoneTooltip');
+        document.querySelectorAll('.body-zone').forEach(zone => {
+            zone.addEventListener('mouseenter', (e) => {
+                const zoneName = zoneNames[zone.dataset.zone] || zone.dataset.zone;
+                const hits = zone.dataset.hits;
+                const percent = zone.dataset.percent;
+                tooltip.innerHTML = `<strong>${zoneName}</strong>: ${hits} попаданий (${percent}%)`;
+                tooltip.classList.add('visible');
+            });
+            
+            zone.addEventListener('mousemove', (e) => {
+                tooltip.style.left = (e.clientX + 15) + 'px';
+                tooltip.style.top = (e.clientY + 15) + 'px';
+            });
+            
+            zone.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('visible');
+            });
+        });
+    </script>
+</body>
+</html>

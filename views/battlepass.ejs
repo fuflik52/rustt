@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <link rel="stylesheet" href="/css/battlepass.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Battle Pass - Loot Editor</title>
+</head>
+<body>
+    <div class="battlepass-page">
+        <!-- Header -->
+        <div class="bp-header">
+            <div>
+                <h1 class="bp-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    Battle Pass
+                </h1>
+                <p class="bp-subtitle">Настройка наград и просмотр статистики игроков</p>
+            </div>
+            <div class="bp-actions">
+                <a href="/" class="btn back-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Назад
+                </a>
+                <button class="btn btn-success" onclick="saveConfig()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Сохранить
+                </button>
+                <button class="btn btn-primary" onclick="exportConfig()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Экспорт
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="bp-tabs">
+            <button class="bp-tab active" onclick="switchTab('config')">Настройки</button>
+            <button class="bp-tab" onclick="switchTab('rewards')">Награды</button>
+            <button class="bp-tab" onclick="switchTab('players')">Игроки</button>
+            <button class="bp-tab" onclick="switchTab('stats')">Статистика</button>
+        </div>
+        
+        <!-- Config Section -->
+        <div class="bp-section active" id="config-section">
+            <div class="config-section">
+                <h3>Основные настройки</h3>
+                <div class="config-grid">
+                    <div class="config-field">
+                        <label class="config-label">Название Battle Pass</label>
+                        <input type="text" class="config-input" id="bp-title" value="<%= bpConfig['Название батл пасса'] || 'BATTLE PASS' %>">
+                    </div>
+                    <div class="config-field">
+                        <label class="config-label">Длительность сезона (дней)</label>
+                        <input type="number" class="config-input" id="bp-duration" value="<%= bpConfig['Длительность сезона (дней)'] || 30 %>">
+                    </div>
+                    <div class="config-field">
+                        <label class="config-label">Дата начала сезона</label>
+                        <input type="date" class="config-input" id="bp-start-date" value="<%= bpConfig['Дата начала сезона'] || '2025-01-01' %>">
+                    </div>
+                    <div class="config-field">
+                        <label class="config-label">Заданий в день</label>
+                        <input type="number" class="config-input" id="bp-quests" value="<%= bpConfig['Количество заданий в день'] || 3 %>">
+                    </div>
+                    <div class="config-field">
+                        <label class="config-label">Опыт за задание</label>
+                        <input type="number" class="config-input" id="bp-xp-quest" value="<%= bpConfig['Опыт за задание'] || 100 %>">
+                    </div>
+                    <div class="config-field">
+                        <label class="config-label">Опыт для уровня</label>
+                        <input type="number" class="config-input" id="bp-xp-level" value="<%= bpConfig['Опыт для уровня'] || 300 %>">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rewards Section -->
+        <div class="bp-section" id="rewards-section">
+            <div class="config-section">
+                <h3>Визуализация Battle Pass</h3>
+                
+                <%
+                const specialImages = {
+                    'balance': 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'30\' fill=\'%23eab308\' stroke=\'%23a16207\' stroke-width=\'2\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' font-family=\'Arial\' font-weight=\'bold\' font-size=\'32\' fill=\'%23713f12\'%3E$%3C/text%3E%3C/svg%3E',
+                    'pan': '/bp-images/Rectangle_161124430.png',
+                    'king': '/bp-images/Rectangle_161124431.png',
+                    'elite': '/bp-images/Rectangle_161124432.png',
+                    'premium': '/bp-images/Rectangle_161124433.png',
+                    'minicopter': '/bp-images/Rectangle_161124442.png' 
+                };
+                %>
+
+                <div class="bp-track-container">
+                    <div class="bp-track-labels">
+                        <div class="bp-track-label free"><span>FREE</span></div>
+                        <div class="bp-track-label premium"><span>PREMIUM</span></div>
+                    </div>
+                    
+                    <div class="bp-track-scroll">
+                        <div class="bp-track">
+                            <!-- Free Rewards Row -->
+                            <div class="bp-row free-row">
+                                <% for(let i = 0; i < 30; i++) { 
+                                   const reward = freeRewards[i];
+                                   const cellClass = reward ? 'has-reward' : '';
+                                %>
+                                <div class="bp-cell <%= cellClass %>" onclick="editReward('free', <%= i %>)">
+                                    <% if (reward) { 
+                                        let imgUrl = reward.type && specialImages[reward.type] ? specialImages[reward.type] : `/icons/${reward.shortname}.png`;
+                                    %>
+                                        <div class="bp-reward-card">
+                                            <div class="bp-reward-icon">
+                                                <img src="<%= imgUrl %>" onerror="this.src='/crates/radtown-crate-normal.avif'" alt="<%= reward.name %>">
+                                            </div>
+                                            <div class="bp-reward-amount"><%= reward.amount > 0 ? 'x' + reward.amount : '' %></div>
+                                            <div class="bp-reward-name"><%= reward.name %></div>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="bp-empty-slot">+</div>
+                                    <% } %>
+                                </div>
+                                <% } %>
+                            </div>
+                            
+                            <!-- Levels Row -->
+                            <div class="bp-row levels-row">
+                                <% for(let i = 0; i < 30; i++) { %>
+                                <div class="bp-level-cell">
+                                    <div class="bp-level-number"><%= i + 1 %></div>
+                                    <div class="bp-level-line"></div>
+                                </div>
+                                <% } %>
+                            </div>
+                            
+                            <!-- Premium Rewards Row -->
+                            <div class="bp-row premium-row">
+                                <% for(let i = 0; i < 30; i++) { 
+                                   const reward = premiumRewards[i];
+                                   const cellClass = reward ? 'has-reward' : '';
+                                %>
+                                <div class="bp-cell <%= cellClass %>" onclick="editReward('premium', <%= i %>)">
+                                    <% if (reward) { 
+                                        let imgUrl = reward.type && specialImages[reward.type] ? specialImages[reward.type] : `/icons/${reward.shortname}.png`;
+                                    %>
+                                        <div class="bp-reward-card premium">
+                                            <div class="bp-reward-icon">
+                                                <img src="<%= imgUrl %>" onerror="this.src='/crates/radtown-crate-normal.avif'" alt="<%= reward.name %>">
+                                            </div>
+                                            <div class="bp-reward-amount"><%= reward.amount > 0 ? 'x' + reward.amount : '' %></div>
+                                            <div class="bp-reward-name"><%= reward.name %></div>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="bp-empty-slot">+</div>
+                                    <% } %>
+                                </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>Управление Наградами</h3>
+                <div class="rewards-actions" style="display: flex; gap: 10px;">
+                     <button class="btn btn-primary" onclick="generateCSharpCode()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 18l6-6-6-6"/>
+                            <path d="M8 6l-6 6 6 6"/>
+                        </svg>
+                        Скачать C# Код Плагина
+                    </button>
+                    <div style="color: var(--text-secondary); font-size: 13px; display: flex; align-items: center;">
+                        Нажмите на ячейку в таблице выше, чтобы изменить награду.
+                    </div>
+                </div>
+                
+                <textarea id="csharp-output" style="width: 100%; height: 200px; margin-top: 20px; background: #111; color: #aaa; border: 1px solid #333; padding: 10px; font-family: monospace; display: none;" readonly></textarea>
+            </div>
+        </div>
+        
+        <!-- Players Section -->
+        <div class="bp-section" id="players-section">
+            <div class="players-table-container">
+                <div class="players-search">
+                    <input type="text" class="search-input" id="player-search" placeholder="Поиск по Steam ID..." oninput="filterPlayers()">
+                </div>
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th>Steam ID</th>
+                            <th>Уровень</th>
+                            <th>Premium</th>
+                            <th>Получено наград</th>
+                            <th>Квестов выполнено</th>
+                        </tr>
+                    </thead>
+                    <tbody id="players-tbody">
+                        <% if (Object.keys(playerData).length === 0) { %>
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    Нет данных об игроках
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <% Object.entries(playerData).forEach(([steamId, player]) => { 
+                                const freeRewards = player.ClaimedFree ? Object.keys(player.ClaimedFree).length : 0;
+                                const premiumRewards = player.ClaimedPremium ? Object.keys(player.ClaimedPremium).length : 0;
+                                const totalRewards = freeRewards + premiumRewards;
+                                const completedQuests = player.DailyQuests ? player.DailyQuests.filter(q => q.Completed).length : 0;
+                            %>
+                            <tr data-steamid="<%= steamId %>">
+                                <td>
+                                    <div class="player-steamid"><%= steamId %></div>
+                                </td>
+                                <td>
+                                    <span class="level-badge">Уровень <%= player.Level || 1 %></span>
+                                </td>
+                                <td>
+                                    <% if (player.IsPremium) { %>
+                                        <span class="premium-badge">Premium</span>
+                                    <% } else { %>
+                                        <span style="color: var(--text-muted); font-size: 12px;">—</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <span class="rewards-claimed"><%= totalRewards %></span>
+                                </td>
+                                <td>
+                                    <%= completedQuests %> / <%= player.DailyQuests ? player.DailyQuests.length : 0 %>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Stats Section -->
+        <div class="bp-section" id="stats-section">
+            <div class="bp-stats">
+                <div class="stat-card">
+                    <div class="stat-value"><%= stats.totalPlayers %></div>
+                    <div class="stat-label">Всего игроков</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value"><%= stats.premiumPlayers %></div>
+                    <div class="stat-label">Premium игроков</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value"><%= stats.averageLevel %></div>
+                    <div class="stat-label">Средний уровень</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value"><%= stats.maxLevel %></div>
+                    <div class="stat-label">Макс. уровень</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value"><%= stats.totalRewardsClaimed %></div>
+                    <div class="stat-label">Получено наград</div>
+                </div>
+            </div>
+
+            <div class="level-chart">
+                <h3>Распределение по уровням</h3>
+                <div style="max-width: 500px; margin: 0 auto;">
+                    <canvas id="levelDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reward Edit Modal -->
+    <div id="reward-modal" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3>Редактирование Награды</h3>
+                <button class="modal-close" onclick="closeRewardModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-type">
+                <input type="hidden" id="edit-index">
+                
+                <div class="modal-tabs">
+                    <button class="modal-tab active" onclick="switchModalTab('item')">Предмет</button>
+                    <button class="modal-tab" onclick="switchModalTab('custom')">Кастомная</button>
+                    <button class="modal-tab" onclick="switchModalTab('command')">Команда</button>
+                </div>
+
+                <!-- Item Tab -->
+                <div id="modal-tab-item" class="modal-tab-content active">
+                    <div style="display: flex; gap: 24px; align-items: flex-start;">
+                        <!-- Left: Large Preview -->
+                        <div class="start-preview-container" style="flex: 0 0 160px;">
+                            <label class="config-label" style="text-align: center; width: 100%; margin-bottom: 12px; display: block;">Предпросмотр</label>
+                            
+                            <div id="selected-item-preview" class="bp-reward-card large-preview" style="width: 140px; height: 160px; margin: 0 auto; display: none; background: #252525; border: 1px solid #383838; position: relative;">
+                                <div class="bp-reward-icon" style="width: 96px; height: 96px;">
+                                    <img src="" id="preview-img" style="width: 100%; height: 100%;">
+                                </div>
+                                <div class="bp-reward-amount" id="preview-amount-badge" style="font-size: 14px; top: 8px; right: 8px; bottom: auto; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 8px; font-weight: 700;">x1</div>
+                                <div class="bp-reward-name" id="preview-name" style="display: block; position: absolute; bottom: 8px; width: 100%; text-align: center; font-size: 12px; color: #aaa; background: rgba(0,0,0,0.3); padding: 2px 0;"></div>
+                            </div>
+                            
+                            <div id="empty-preview" class="bp-empty-slot large-slot" style="width: 140px; height: 160px; font-size: 48px; border: 2px dashed #444; margin: 0 auto;">?</div>
+                            <input type="hidden" id="selected-shortname">
+                        </div>
+
+                        <!-- Right: Controls -->
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+                            <div class="config-field">
+                                <label class="config-label">Поиск предмета</label>
+                                <div class="item-search-wrapper">
+                                    <input type="text" class="config-input" id="item-search" placeholder="Название предмета..." oninput="searchItems(this.value)">
+                                    <div id="item-results" class="item-results-list"></div>
+                                </div>
+                            </div>
+                            <div class="config-field">
+                                <label class="config-label">Количество</label>
+                                <input type="number" class="config-input" id="item-amount" value="1" oninput="updatePreviewAmount(this.value)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Tab -->
+                <div id="modal-tab-custom" class="modal-tab-content">
+                    <div class="custom-types-grid">
+                        <div class="custom-type-card" onclick="selectCustomType('balance')">
+                            <div class="bp-reward-icon"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23eab308' stroke='%23a16207' stroke-width='2'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='Arial' font-weight='bold' font-size='32' fill='%23713f12'%3E$%3C/text%3E%3C/svg%3E"></div>
+                            <span>Баланс</span>
+                        </div>
+                        <div class="custom-type-card" onclick="selectCustomType('premium')">
+                            <div class="bp-reward-icon"><img src="/bp-images/Rectangle_161124433.png"></div>
+                            <span>Premium</span>
+                        </div>
+                        <div class="custom-type-card" onclick="selectCustomType('elite')">
+                            <div class="bp-reward-icon"><img src="/bp-images/Rectangle_161124432.png"></div>
+                            <span>Elite</span>
+                        </div>
+                        <div class="custom-type-card" onclick="selectCustomType('king')">
+                            <div class="bp-reward-icon"><img src="/bp-images/Rectangle_161124431.png"></div>
+                            <span>King</span>
+                        </div>
+                        <div class="custom-type-card" onclick="selectCustomType('minicopter')">
+                            <div class="bp-reward-icon"><img src="/bp-images/Rectangle_161124442.png"></div>
+                            <span>Коптер</span>
+                        </div>
+                        <div class="custom-type-card" onclick="selectCustomType('pan')">
+                            <div class="bp-reward-icon"><img src="/bp-images/Rectangle_161124430.png"></div>
+                            <span>Pan</span>
+                        </div>
+                    </div>
+                    <div class="config-field">
+                         <label class="config-label" id="custom-amount-label">Количество / Дни / Сумма</label>
+                         <input type="number" class="config-input" id="custom-amount" value="1">
+                    </div>
+                    <input type="hidden" id="selected-custom-type">
+                </div>
+                
+                <!-- Command Tab -->
+                <div id="modal-tab-command" class="modal-tab-content">
+                    <div class="config-field">
+                        <label class="config-label">Отображаемое Имя</label>
+                        <input type="text" class="config-input" id="cmd-name" placeholder="Например: VIP на час">
+                    </div>
+                    <div class="config-field">
+                        <label class="config-label">Консольная Команда</label>
+                        <input type="text" class="config-input" id="cmd-command" placeholder="o.grant user %steamid% vipperm 1d">
+                        <p class="help-text">Доступные плейсхолдеры: %steamid%, %username%</p>
+                    </div>
+                    <div class="config-field">
+                         <label class="config-label">Иконка (шортнейм предмета)</label>
+                         <input type="text" class="config-input" id="cmd-icon" placeholder="rifle.ak">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-danger" onclick="deleteReward()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Удалить
+                    </button>
+                    <button class="btn btn-success" onclick="saveRewardEdit()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Server Data Transfer -->
+    <script id="bp-server-data" type="application/json">
+        <%- JSON.stringify({ 
+            items: items, 
+            freeRewards: freeRewards, 
+            premiumRewards: premiumRewards, 
+            levelDistribution: stats.levelDistribution 
+        }) %>
+    </script>
+
+    <script>
+        // Init Data from Server
+        const serverData = JSON.parse(document.getElementById('bp-server-data').textContent);
+        const ALL_ITEMS = serverData.items;
+        let freeRewards = serverData.freeRewards;
+        let premiumRewards = serverData.premiumRewards;
+        const levelDistribution = serverData.levelDistribution;
+
+        // Chart.js Init
+        document.addEventListener('DOMContentLoaded', () => {
+            // Local Storage Restore
+            loadFromLocal();
+            
+            // Auto-save on config inputs change
+            const configInputs = ['bp-title', 'bp-duration', 'bp-start-date', 'bp-quests', 'bp-xp-quest', 'bp-xp-level'];
+            configInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.addEventListener('input', saveToLocal);
+            });
+
+            // Click outside modal to close
+            document.getElementById('reward-modal').addEventListener('click', (e) => {
+                 if (e.target === e.currentTarget) closeRewardModal();
+            });
+
+            const ctx = document.getElementById('levelDistributionChart').getContext('2d');
+            
+            // Generate distinct colors
+            const backgroundColors = [
+                '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', 
+                '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef'
+            ];
+            
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(levelDistribution).map(l => 'Уровень ' + l),
+                    datasets: [{
+                        data: Object.values(levelDistribution),
+                        backgroundColor: Object.keys(levelDistribution).map((_, i) => backgroundColors[i % backgroundColors.length]),
+                        borderWidth: 1,
+                        borderColor: '#111'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#ccc' } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw} игроков`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+             // ... existing chart code ...
+             
+             // Click outside modal to close
+             document.getElementById('reward-modal').addEventListener('click', (e) => {
+                 if (e.target === e.currentTarget) closeRewardModal();
+             });
+        });
+        
+        // --- Local Storage Logic ---
+        function saveToLocal() {
+            const data = {
+                freeRewards,
+                premiumRewards,
+                config: {
+                    title: document.getElementById('bp-title').value,
+                    duration: document.getElementById('bp-duration').value,
+                    startDate: document.getElementById('bp-start-date').value,
+                    quests: document.getElementById('bp-quests').value,
+                    xpQuest: document.getElementById('bp-xp-quest').value,
+                    xpLevel: document.getElementById('bp-xp-level').value
+                },
+                timestamp: Date.now()
+            };
+            localStorage.setItem('bp_editor_backup', JSON.stringify(data));
+        }
+
+        function loadFromLocal() {
+            const saved = localStorage.getItem('bp_editor_backup');
+            if (!saved) return;
+            
+            try {
+                const data = JSON.parse(saved);
+                // Optional: Check if data is too old? e.g. > 7 days
+                
+                if (data.freeRewards) freeRewards = data.freeRewards;
+                if (data.premiumRewards) premiumRewards = data.premiumRewards;
+                
+                if (data.config) {
+                    if(data.config.title) document.getElementById('bp-title').value = data.config.title;
+                    if(data.config.duration) document.getElementById('bp-duration').value = data.config.duration;
+                    if(data.config.startDate) document.getElementById('bp-start-date').value = data.config.startDate;
+                    if(data.config.quests) document.getElementById('bp-quests').value = data.config.quests;
+                    if(data.config.xpQuest) document.getElementById('bp-xp-quest').value = data.config.xpQuest;
+                    if(data.config.xpLevel) document.getElementById('bp-xp-level').value = data.config.xpLevel;
+                }
+                
+                refreshTrack();
+                showToast("Восстановлено", "Данные загружены из локального хранилища");
+            } catch (e) {
+                console.error("Local Restore Error:", e);
+            }
+        }
+
+        // --- Tab Switching ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.bp-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.bp-section').forEach(section => section.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-section').classList.add('active');
+        }
+
+        // --- Modal Logic ---
+        let currentEditType = null;
+        let currentEditIndex = null;
+
+        function editReward(type, index) {
+            currentEditType = type;
+            currentEditIndex = index;
+            document.getElementById('edit-type').value = type;
+            document.getElementById('edit-index').value = index;
+            
+            const reward = type === 'free' ? freeRewards[index] : premiumRewards[index];
+            
+            // Reset modal state
+            document.getElementById('item-results').innerHTML = '';
+            document.getElementById('selected-item-preview').style.display = 'none';
+            document.querySelectorAll('.custom-type-card').forEach(c => c.classList.remove('active'));
+            
+            // Pre-fill if exists
+            if (reward) {
+                if (reward.type) {
+                     // Custom or Command
+                     if (['balance', 'premium', 'elite', 'king', 'minicopter', 'pan'].includes(reward.type)) {
+                         switchModalTab('custom');
+                         selectCustomType(reward.type);
+                         document.getElementById('custom-amount').value = reward.amount;
+                     } else {
+                         // Likely command
+                         switchModalTab('command');
+                         document.getElementById('cmd-name').value = reward.name;
+                         document.getElementById('cmd-command').value = reward.command || '';
+                         document.getElementById('cmd-icon').value = reward.shortname;
+                     }
+                } else {
+                    // Item
+                    switchModalTab('item');
+                    document.getElementById('item-amount').value = reward.amount;
+                    document.getElementById('selected-shortname').value = reward.shortname;
+                    
+                    // Try to find clean name from ALL_ITEMS to avoid "Scrap x100 x100" double labeling
+                    const cleanItem = ALL_ITEMS.find(i => i.shortname === reward.shortname);
+                    if (cleanItem) {
+                        document.getElementById('preview-name').innerText = cleanItem.name;
+                        document.getElementById('preview-img').src = `/icons/${reward.shortname}.png`;
+                    } else {
+                        document.getElementById('preview-name').innerText = reward.name;
+                        document.getElementById('preview-img').src = `/icons/${reward.shortname}.png`;
+                    }
+                    
+                    document.getElementById('selected-item-preview').style.display = 'flex';
+                    document.getElementById('empty-preview').style.display = 'none';
+                    updatePreviewAmount(reward.amount);
+                }
+            } else {
+                switchModalTab('item');
+                // Reset Preview
+                document.getElementById('selected-item-preview').style.display = 'none';
+                document.getElementById('empty-preview').style.display = 'flex';
+                document.getElementById('item-amount').value = 1;
+                document.getElementById('item-search').value = '';
+            }
+            
+            document.getElementById('reward-modal').classList.add('active');
+        }
+
+        function closeRewardModal() {
+            document.getElementById('reward-modal').classList.remove('active');
+        }
+
+        function switchModalTab(tab) {
+            document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Verify event.target is a button (it implies this func is called by onclick)
+            // If called programmatically, we need to find the button
+            const btn = Array.from(document.querySelectorAll('.modal-tab')).find(b => b.innerText.toLowerCase().includes(tab === 'item' ? 'предмет' : (tab === 'custom' ? 'кастомная' : 'команда')));
+            if(btn) btn.classList.add('active');
+
+            document.getElementById('modal-tab-' + tab).classList.add('active');
+        }
+
+        // --- Item Search ---
+        function searchItems(query) {
+            const resultsDiv = document.getElementById('item-results');
+            resultsDiv.innerHTML = '';
+            if (query.length < 2) return;
+            
+            const matches = ALL_ITEMS.filter(item => 
+                item.name.toLowerCase().includes(query.toLowerCase()) || 
+                item.shortname.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 10);
+            
+            matches.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item-result';
+                div.innerHTML = `<img src="/icons/${item.shortname}.png" onerror="this.src='/crates/radtown-crate-normal.avif'"> <span>${item.name}</span>`;
+                div.onclick = () => selectItem(item);
+                resultsDiv.appendChild(div);
+            });
+        }
+
+        function selectItem(item) {
+            document.getElementById('selected-shortname').value = item.shortname;
+            document.getElementById('preview-name').innerText = item.name;
+            document.getElementById('preview-img').src = `/icons/${item.shortname}.png`;
+            document.getElementById('item-results').innerHTML = '';
+            document.getElementById('item-search').value = item.name;
+            
+            // Show preview logic
+            document.getElementById('selected-item-preview').style.display = 'flex';
+            document.getElementById('empty-preview').style.display = 'none';
+            // Trigger amount update to set badge
+            updatePreviewAmount(document.getElementById('item-amount').value);
+        }
+
+        function updatePreviewAmount(val) {
+             document.getElementById('preview-amount-badge').innerText = val > 1 ? 'x' + val : '';
+             // If val is 1 or empty, maybe hide? Rust usually shows nothing for 1.
+             if(val <= 1) document.getElementById('preview-amount-badge').innerText = '';
+             else document.getElementById('preview-amount-badge').innerText = 'x' + val;
+        }
+
+        // --- Custom Type Selection ---
+        function selectCustomType(type) {
+            document.querySelectorAll('.custom-type-card').forEach(c => c.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('selected-custom-type').value = type;
+
+            const label = document.getElementById('custom-amount-label');
+            if(label) {
+                if(['premium', 'elite', 'king', 'pan'].includes(type)) label.innerText = 'Длительность (дней)';
+                else if(type === 'balance') label.innerText = 'Сумма (RUB)';
+                else label.innerText = 'Количество';
+            }
+        }
+
+        // --- Save / Delete Reward Logic ---
+        function deleteReward() {
+            if (currentEditType === 'free') {
+                freeRewards[currentEditIndex] = null;
+            } else {
+                premiumRewards[currentEditIndex] = null;
+            }
+            saveToLocal();
+            closeRewardModal();
+            refreshTrack();
+        }
+        
+        function saveRewardEdit() {
+            const activeTab = document.querySelector('.modal-tab-content.active').id;
+            let newReward = null;
+
+            if (activeTab === 'modal-tab-item') {
+                const shortname = document.getElementById('selected-shortname').value;
+                const amount = parseInt(document.getElementById('item-amount').value);
+                const name = document.getElementById('preview-name').innerText;
+                
+                if (!shortname) return alert('Выберите предмет!');
+                
+                newReward = { shortname, amount, name };
+            } else if (activeTab === 'modal-tab-custom') {
+                const type = document.getElementById('selected-custom-type').value;
+                const amount = parseInt(document.getElementById('custom-amount').value);
+                
+                if (!type) return alert('Выберите тип награды!');
+                
+                let name = '';
+                switch(type) {
+                    case 'balance': name = `${amount}р баланс`; break;
+                    case 'premium': name = `Premium ${amount} дней`; break;
+                    case 'elite': name = `Elite ${amount} дней`; break;
+                    case 'king': name = `King ${amount} дней`; break;
+                    case 'minicopter': name = `Миникоптеры x${amount}`; break;
+                    case 'pan': name = `Pan ${amount} дней`; break;
+                }
+                
+                newReward = { type, amount, name, shortname: type };
+            } else if (activeTab === 'modal-tab-command') {
+                const name = document.getElementById('cmd-name').value;
+                const command = document.getElementById('cmd-command').value;
+                const icon = document.getElementById('cmd-icon').value;
+                
+                if (!name || !command) return alert('Заполните поля!');
+                
+                newReward = { name, command, shortname: icon || 'box.wooden', amount: 1 }; 
+            }
+
+            if (currentEditType === 'free') {
+                freeRewards[currentEditIndex] = newReward;
+            } else {
+                premiumRewards[currentEditIndex] = newReward;
+            }
+            
+            saveToLocal();
+            closeRewardModal();
+            refreshTrack();
+        }
+        
+        // --- Refresh UI ---
+        function refreshTrack() {
+           const specialImages = {
+               'balance': 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Ccircle cx=\'32\' cy=\'32\' r=\'30\' fill=\'%23eab308\' stroke=\'%23a16207\' stroke-width=\'2\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' font-family=\'Arial\' font-weight=\'bold\' font-size=\'32\' fill=\'%23713f12\'%3E$%3C/text%3E%3C/svg%3E',
+               'pan': '/bp-images/Rectangle_161124430.png',
+               'king': '/bp-images/Rectangle_161124431.png',
+               'elite': '/bp-images/Rectangle_161124432.png',
+               'premium': '/bp-images/Rectangle_161124433.png',
+               'minicopter': '/bp-images/Rectangle_161124442.png' 
+           };
+
+           // Helper to render one cell
+           const renderCell = (container, index, reward, isPremium) => {
+               const cell = container.children[index];
+               if (!reward) {
+                   cell.className = 'bp-cell';
+                   cell.onclick = () => editReward(isPremium ? 'premium' : 'free', index);
+                   cell.innerHTML = '<div class="bp-empty-slot">+</div>';
+               } else {
+                   cell.className = 'bp-cell has-reward';
+                   cell.onclick = () => editReward(isPremium ? 'premium' : 'free', index);
+                   
+                   let imgUrl = reward.type && specialImages[reward.type] ? specialImages[reward.type] : `/icons/${reward.shortname}.png`;
+                   let cardClass = isPremium ? 'bp-reward-card premium' : 'bp-reward-card';
+                   let amountText = reward.amount > 0 ? 'x' + reward.amount : '';
+                   
+                   cell.innerHTML = `
+                       <div class="${cardClass}">
+                            <div class="bp-reward-icon">
+                                <img src="${imgUrl}" onerror="this.src='/crates/radtown-crate-normal.avif'" alt="${reward.name}">
+                            </div>
+                            <div class="bp-reward-amount">${amountText}</div>
+                            <div class="bp-reward-name">${reward.name}</div>
+                        </div>
+                   `;
+               }
+           };
+
+           // Full Refresh Free
+           const freeRow = document.querySelector('.free-row');
+           for(let i=0; i<30; i++) {
+               renderCell(freeRow, i, freeRewards[i], false);
+           }
+
+           // Full Refresh Premium
+           const premiumRow = document.querySelector('.premium-row');
+           for(let i=0; i<30; i++) {
+               renderCell(premiumRow, i, premiumRewards[i], true);
+           }
+        }
+        
+        function showToast(title, message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            
+            const icon = document.createElement('div');
+            icon.className = 'notification-icon';
+            // Simple check icon
+            icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            
+            if(type === 'error') {
+                icon.style.backgroundColor = '#ef4444';
+                icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            }
+
+            const content = document.createElement('div');
+            content.className = 'notification-content';
+            
+            const titleEl = document.createElement('div');
+            titleEl.className = 'notification-title';
+            titleEl.innerText = title;
+            
+            const msgEl = document.createElement('div');
+            msgEl.className = 'notification-message';
+            msgEl.innerText = message;
+            
+            content.appendChild(titleEl);
+            content.appendChild(msgEl);
+            
+            toast.appendChild(icon);
+            toast.appendChild(content);
+            
+            document.body.appendChild(toast);
+            
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.add('closing');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Generate C# Code ---
+        function generateCSharpCode() {
+            let code = `
+        private void CheckRewards(BasePlayer player, int level, bool isPremium)
+        {
+            // Free Rewards
+            switch (level)
+            {`;
+            
+            for(let i=0; i<30; i++) {
+                const r = freeRewards[i];
+                if (r) {
+                    code += `\n                case ${i+1}:`;
+                    if (r.type === 'balance') code += `\n                    GiveBalance(player, ${r.amount});`;
+                    else if (r.command) code += `\n                    ConsoleSystem.Run(ConsoleSystem.Option.Server, "${r.command}".Replace("%steamid%", player.UserIDString).Replace("%username%", player.displayName));`;
+                    else if (r.type && r.type !== 'item') code += `\n                    GiveCustom(player, "${r.type}", ${r.amount}); // Requires Custom Impl`;
+                    else code += `\n                    GiveItem(player, "${r.shortname}", ${r.amount});`;
+                    code += `\n                    break;`;
+                }
+            }
+            
+            code += `
+            }
+
+            if (isPremium)
+            {
+                // Premium Rewards
+                switch (level)
+                {`;
+
+            for(let i=0; i<30; i++) {
+                const r = premiumRewards[i];
+                if (r) {
+                    code += `\n                    case ${i+1}:`;
+                     if (r.type === 'balance') code += `\n                        GiveBalance(player, ${r.amount});`;
+                    else if (r.command) code += `\n                        ConsoleSystem.Run(ConsoleSystem.Option.Server, "${r.command}".Replace("%steamid%", player.UserIDString).Replace("%username%", player.displayName));`;
+                     else if (r.type && r.type !== 'item') code += `\n                        GiveCustom(player, "${r.type}", ${r.amount}); // Requires Custom Impl`;
+                    else code += `\n                        GiveItem(player, "${r.shortname}", ${r.amount});`;
+                    code += `\n                        break;`;
+                }
+            }
+
+            code += `
+                }
+            }
+        }`;
+            
+            const output = document.getElementById('csharp-output');
+            output.value = code;
+            output.style.display = 'block';
+            output.select();
+            document.execCommand('copy');
+            showToast("Успешно", "Код скопирован в буфер обмена!");
+        }
+
+        // --- Save Config (Updated) ---
+        async function saveConfig() {
+            // Convert array back to object keys if needed by C# plugin json parser, 
+            // but for now we just save whatever structure to JSON.
+            // If the C# plugin expects "1": {...}, "2": {...}, we should convert.
+            
+            // Let's assume standard Dictionary<string, ItemDef> or similar in JSON.
+            // We just save it as the raw Arrays for now, or Convert to Dictionary if needed.
+            
+            const config = {
+                "Название батл пасса": document.getElementById('bp-title').value,
+                "Длительность сезона (дней)": parseInt(document.getElementById('bp-duration').value),
+                "Дата начала сезона": document.getElementById('bp-start-date').value,
+                "Количество заданий в день": parseInt(document.getElementById('bp-quests').value),
+                "Опыт за задание": parseInt(document.getElementById('bp-xp-quest').value),
+                "Опыт для уровня": parseInt(document.getElementById('bp-xp-level').value),
+                "Награды бесплатного трека": freeRewards,
+                "Награды премиум трека": premiumRewards
+            };
+            
+            try {
+                const response = await fetch('/api/battlepass/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                const data = await response.json();
+                if (data.success) showToast("Успешно", "Конфигурация сохранена! (JSON обновлен)");
+                else showToast("Ошибка", data.error || 'Unknown', 'error');
+            } catch (e) {
+                showToast("Ошибка", e.message, 'error');
+            }
+        }
+        
+        // Export config
+        async function exportConfig() {
+             // ... same logic ...
+             try {
+                const response = await fetch('/api/battlepass/export');
+                const data = await response.json();
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'BattolepasUI.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('Ошибка при экспорте: ' + e.message);
+            }
+        }        
+        
+        // Filter players
+        function filterPlayers() {
+            const searchTerm = document.getElementById('player-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#players-tbody tr[data-steamid]');
+            rows.forEach(row => {
+                const steamId = row.getAttribute('data-steamid').toLowerCase();
+                row.style.display = steamId.includes(searchTerm) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

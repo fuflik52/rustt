@@ -20,6 +20,7 @@ app.get('/style.css', (req, res) => {
 app.use(express.static('public'));
 app.use('/icons', express.static('icons')); // Иконки из папки icons
 app.use('/crates', express.static('public/crates')); // Фото ящиков
+app.use('/bp-images', express.static(path.join(__dirname, 'bp', 'Images'))); // Custom BP images
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -217,6 +218,68 @@ app.get('/players', (req, res) => {
     });
 });
 
+// ============ HIT STATS ROUTES ============
+
+// Страница со списком всех игроков HitStats
+app.get('/stats', (req, res) => {
+    const hitStatsFile = path.join(__dirname, 'HitStats.json');
+    let hitStatsData = {};
+    
+    if (fs.existsSync(hitStatsFile)) {
+        try {
+            hitStatsData = JSON.parse(fs.readFileSync(hitStatsFile, 'utf8'));
+        } catch (e) {
+            hitStatsData = {};
+        }
+    }
+    
+    res.render('hitstats', {
+        hitStatsData
+    });
+});
+
+// Страница статистики конкретного игрока
+app.get('/stats/:steamId', (req, res) => {
+    const steamId = req.params.steamId;
+    const hitStatsFile = path.join(__dirname, 'HitStats.json');
+    let hitStatsData = {};
+    
+    if (fs.existsSync(hitStatsFile)) {
+        try {
+            hitStatsData = JSON.parse(fs.readFileSync(hitStatsFile, 'utf8'));
+        } catch (e) {
+            hitStatsData = {};
+        }
+    }
+    
+    const playerStats = hitStatsData[steamId];
+    if (!playerStats) {
+        return res.redirect('/stats');
+    }
+    
+    res.render('hitstats-player', {
+        steamId,
+        playerStats,
+        allPlayers: hitStatsData
+    });
+});
+
+// API для получения HitStats данных
+app.get('/api/hitstats', (req, res) => {
+    const hitStatsFile = path.join(__dirname, 'HitStats.json');
+    let hitStatsData = {};
+    
+    if (fs.existsSync(hitStatsFile)) {
+        try {
+            hitStatsData = JSON.parse(fs.readFileSync(hitStatsFile, 'utf8'));
+        } catch (e) {
+            hitStatsData = {};
+        }
+    }
+    
+    res.json(hitStatsData);
+});
+
 // Страница настройки стаков
 app.get('/stacks', (req, res) => {
     const containers = getContainers();
@@ -228,6 +291,200 @@ app.get('/stacks', (req, res) => {
         containers,
         rustContainers: RUST_CONTAINERS
     });
+});
+
+// ============ BATTLEPASS ROUTES ============
+
+// Hardcoded rewards from C# to display in UI
+const FREE_REWARDS = [
+    { shortname: "jackhammer", amount: 5, name: "Буры x5" },
+    { shortname: "oretea.pure", amount: 3, name: "Чай ФАРМ Топовый x3" },
+    { shortname: "metal.facemask", amount: 5, name: "МВК Маски x5" },
+    { shortname: "metal.plate.torso", amount: 5, name: "МВК Грудаки x5" },
+    { shortname: "roadsign.kilt", amount: 5, name: "Килты x5" },
+    { shortname: "blueberries", amount: 200, name: "Ягоды x200" },
+    { shortname: "ammo.rifle.incendiary", amount: 2000, name: "Зажиг. 5.56 x2000" },
+    { shortname: "lmg.m249", amount: 1, name: "М249" },
+    { shortname: "metal.fragments", amount: 30000, name: "Металл x30000" },
+    { shortname: "premium", amount: 1, name: "Premium 1 день", type: "premium" },
+    { shortname: "sulfur", amount: 50000, name: "Сера x50000" },
+    { shortname: "metal.refined", amount: 1000, name: "МВК x1000" },
+    { shortname: "maxhealthtea.pure", amount: 15, name: "Чай ХП Топовый x15" },
+    { shortname: "wood", amount: 200000, name: "Дерево x200000" },
+    { shortname: "balance", amount: 100, name: "100р баланс", type: "balance" },
+    { shortname: "supertea", amount: 1, name: "Супер чай" },
+    { shortname: "blueberries", amount: 200, name: "Ягоды x200" },
+    { shortname: "stones", amount: 200000, name: "Камень x200000" },
+    { shortname: "autoturret", amount: 30, name: "Турели x30" },
+    { shortname: "elite", amount: 1, name: "Elite 1 день", type: "elite" },
+    { shortname: "oretea.pure", amount: 10, name: "Чай ФАРМ Топовый x10" },
+    { shortname: "balance", amount: 250, name: "250р баланс", type: "balance" },
+    { shortname: "sulfur", amount: 150000, name: "Сера x150000" },
+    { shortname: "metal.fragments", amount: 250000, name: "Металл x250000" },
+    { shortname: "king", amount: 1, name: "King 1 день", type: "king" },
+    { shortname: "blueberries", amount: 200, name: "Ягоды x200" },
+    { shortname: "minicopter", amount: 10, name: "Миникоптеры x10", type: "minicopter" },
+    { shortname: "metal.refined", amount: 5000, name: "МВК x5000" },
+    { shortname: "maxhealthtea.pure", amount: 30, name: "Чай ХП Топовый x30" },
+    { shortname: "pan", amount: 3, name: "Pan 3 дня", type: "pan" }
+];
+
+const PREMIUM_REWARDS = [
+    { shortname: "blueberries", amount: 300, name: "Ягоды x300" },
+    { shortname: "metal.refined", amount: 5000, name: "МВК x5000" },
+    { shortname: "metal.facemask", amount: 10, name: "МВК Маски x10" },
+    { shortname: "metal.plate.torso", amount: 10, name: "МВК Грудаки x10" },
+    { shortname: "roadsign.kilt", amount: 10, name: "Килты x10" },
+    { shortname: "sulfur", amount: 200000, name: "Сера x200000" },
+    { shortname: "lmg.m249", amount: 3, name: "М249 x3" },
+    { shortname: "wood", amount: 200000, name: "Дерево x200000" },
+    { shortname: "balance", amount: 300, name: "300р баланс", type: "balance" },
+    { shortname: "premium", amount: 7, name: "Premium 7 дней", type: "premium" },
+    { shortname: "minicopter", amount: 10, name: "Миникоптеры x10", type: "minicopter" },
+    { shortname: "blueberries", amount: 300, name: "Ягоды x300" },
+    { shortname: "king", amount: 1, name: "King 1 день", type: "king" },
+    { shortname: "stones", amount: 200000, name: "Камень x200000" },
+    { shortname: "metal.fragments", amount: 300000, name: "Металл x300000" },
+    { shortname: "supertea", amount: 3, name: "Супер чай x3" },
+    { shortname: "oretea.pure", amount: 10, name: "Чай ФАРМ Топовый x10" },
+    { shortname: "balance", amount: 300, name: "300р баланс", type: "balance" },
+    { shortname: "autoturret", amount: 30, name: "Турели x30" },
+    { shortname: "elite", amount: 7, name: "Elite 7 дней", type: "elite" },
+    { shortname: "maxhealthtea.pure", amount: 30, name: "Чай ХП Топовый x30" },
+    { shortname: "minicopter", amount: 10, name: "Миникоптеры x10", type: "minicopter" },
+    { shortname: "sulfur", amount: 150000, name: "Сера x150000" },
+    { shortname: "metal.refined", amount: 5000, name: "МВК x5000" },
+    { shortname: "king", amount: 7, name: "King 7 дней", type: "king" },
+    { shortname: "autoturret", amount: 30, name: "Турели x30" },
+    { shortname: "jackhammer", amount: 15, name: "Буры x15" },
+    { shortname: "balance", amount: 300, name: "300р баланс", type: "balance" },
+    { shortname: "sulfur", amount: 200000, name: "Сера x200000" },
+    { shortname: "pan", amount: 30, name: "Pan 30 дней", type: "pan" }
+];
+
+// Страница батлпасса
+app.get('/battlepass', (req, res) => {
+    const bpConfigPath = path.join(__dirname, 'bp', 'BattolepasUI.json');
+    const playerDataPath = path.join(__dirname, 'bp', 'PlayerData.json');
+    
+    let bpConfig = {
+        "Название батл пасса": "BATTLE PASS",
+        "Длительность сезона (дней)": 30,
+        "Дата начала сезона": "2025-01-01",
+        "Количество заданий в день": 3,
+        "Опыт за задание": 100,
+        "Опыт для уровня": 300,
+        "Награды бесплатного трека": {},
+        "Награды премиум трека": {}
+    };
+    
+    let playerData = {};
+    
+    if (fs.existsSync(bpConfigPath)) {
+        try {
+            bpConfig = JSON.parse(fs.readFileSync(bpConfigPath, 'utf8'));
+        } catch (e) {
+            console.error('Error loading BP config:', e);
+        }
+    }
+    
+    if (fs.existsSync(playerDataPath)) {
+        try {
+            playerData = JSON.parse(fs.readFileSync(playerDataPath, 'utf8'));
+        } catch (e) {
+            console.error('Error loading player data:', e);
+        }
+    }
+    
+    // Подсчет статистики игроков
+    const stats = {
+        totalPlayers: Object.keys(playerData).length,
+        premiumPlayers: 0,
+        totalRewardsClaimed: 0,
+        averageLevel: 0,
+        maxLevel: 0,
+        levelDistribution: {}
+    };
+    
+    let totalLevels = 0;
+    
+    Object.values(playerData).forEach(player => {
+        if (player.IsPremium) stats.premiumPlayers++;
+        totalLevels += player.Level || 1;
+        stats.maxLevel = Math.max(stats.maxLevel, player.Level || 1);
+        
+        const level = player.Level || 1;
+        stats.levelDistribution[level] = (stats.levelDistribution[level] || 0) + 1;
+        
+        if (player.ClaimedFree) {
+            stats.totalRewardsClaimed += Object.keys(player.ClaimedFree).length;
+        }
+        if (player.ClaimedPremium) {
+            stats.totalRewardsClaimed += Object.keys(player.ClaimedPremium).length;
+        }
+    });
+    
+    if (stats.totalPlayers > 0) {
+        stats.averageLevel = (totalLevels / stats.totalPlayers).toFixed(1);
+    }
+    
+    res.render('battlepass', {
+        bpConfig,
+        playerData,
+        stats,
+        items: ALL_ITEMS,
+        getItemName: getItemName,
+        containers: getContainers(),
+        rustContainers: RUST_CONTAINERS,
+        freeRewards: FREE_REWARDS,
+        premiumRewards: PREMIUM_REWARDS,
+        freeRewards: FREE_REWARDS,
+        premiumRewards: PREMIUM_REWARDS
+    });
+});
+
+// API для сохранения конфига батлпасса
+app.post('/api/battlepass/config', (req, res) => {
+    const bpConfigPath = path.join(__dirname, 'bp', 'BattolepasUI.json');
+    
+    try {
+        fs.writeFileSync(bpConfigPath, JSON.stringify(req.body, null, 2));
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// API для получения данных игроков
+app.get('/api/battlepass/players', (req, res) => {
+    const playerDataPath = path.join(__dirname, 'bp', 'PlayerData.json');
+    
+    if (!fs.existsSync(playerDataPath)) {
+        return res.json({});
+    }
+    
+    try {
+        const data = JSON.parse(fs.readFileSync(playerDataPath, 'utf8'));
+        res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API для экспорта конфига батлпасса
+app.get('/api/battlepass/export', (req, res) => {
+    const bpConfigPath = path.join(__dirname, 'bp', 'BattolepasUI.json');
+    
+    if (!fs.existsSync(bpConfigPath)) {
+        return res.status(404).json({ error: 'Config not found' });
+    }
+    
+    try {
+        const data = JSON.parse(fs.readFileSync(bpConfigPath, 'utf8'));
+        res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // API для списка предметов

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <%- include('partials/head') %>
+    <title>Hit Stats - Статистика попаданий</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        html, body { height: 100%; overflow-y: auto; }
+        .hitstats-page { padding: 40px; max-width: 1400px; margin: 0 auto; min-height: 100vh; }
+        .hitstats-header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+        .hitstats-title { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+        .hitstats-title svg { width: 28px; height: 28px; color: var(--accent); }
+        .hitstats-subtitle { color: var(--text-secondary); font-size: 14px; }
+        .back-btn { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text); border-radius: 8px; text-decoration: none; font-size: 13px; transition: all 0.2s; }
+        .back-btn:hover { border-color: var(--accent); background: rgba(59,130,246,0.1); }
+        .back-btn svg { width: 16px; height: 16px; }
+        
+        .hitstats-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        @media (max-width: 900px) { .hitstats-stats { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { .hitstats-stats { grid-template-columns: 1fr; } }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+        .stat-value { font-size: 26px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
+        
+        .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 250px; max-width: 400px; position: relative; }
+        .search-box svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted); }
+        .search-input { width: 100%; padding: 12px 16px 12px 44px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .sort-select { padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; cursor: pointer; }
+
+        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .player-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: all 0.2s; text-decoration: none; display: block; }
+        .player-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        .player-card-header { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--bg-tertiary); }
+        .player-avatar { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: var(--bg-secondary); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; }
+        .player-avatar svg { width: 32px; height: 32px; color: var(--text-muted); }
+        .player-avatar.loading { background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        .player-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .player-info { flex: 1; min-width: 0; }
+        .player-name { font-size: 16px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .player-steamid { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+        .player-card-body { padding: 16px; }
+        .player-stats-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .player-stat { flex: 1; background: var(--bg-tertiary); border-radius: 8px; padding: 10px; text-align: center; }
+        .player-stat-value { font-size: 18px; font-weight: 700; color: var(--accent); }
+        .player-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+        
+        /* Mini body preview */
+        .mini-body-preview { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+        .mini-body-part { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .mini-body-part.head { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .mini-body-part.chest { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+        .mini-body-part.pelvis { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+        .mini-body-part.arms { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .mini-body-part.legs { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        
+        .player-card-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .view-profile { display: flex; align-items: center; gap: 6px; color: var(--accent); font-size: 12px; font-weight: 500; }
+        .view-profile svg { width: 14px; height: 14px; }
+        .headshot-rate { font-size: 12px; color: var(--text-secondary); }
+        .headshot-rate span { color: #ef4444; font-weight: 600; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-state svg { width: 64px; height: 64px; color: var(--text-muted); margin-bottom: 16px; }
+        .empty-state p { color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="hitstats-page">
+        <div class="hitstats-header">
+            <div>
+                <h1 class="hitstats-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="6"/>
+                        <circle cx="12" cy="12" r="2"/>
+                    </svg>
+                    Hit Stats
+                </h1>
+                <p class="hitstats-subtitle">Статистика попаданий по частям тела • /stats steamid</p>
+            </div>
+            <a href="/" class="back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                На главную
+            </a>
+        </div>
+        
+        <%
+        const playersArray = [];
+        let totalHitsAll = 0;
+        let totalHeadshotsAll = 0;
+        
+        Object.entries(hitStatsData).forEach(([steamId, player]) => {
+            if (player && player.Total > 0) {
+                totalHitsAll += player.Total;
+                totalHeadshotsAll += player.Head || 0;
+                
+                const headRate = player.Total > 0 ? ((player.Head || 0) / player.Total * 100).toFixed(1) : 0;
+                
+                playersArray.push({
+                    steamId,
+                    name: player.Name || 'Unknown',
+                    total: player.Total,
+                    head: player.Head || 0,
+                    neck: player.Neck || 0,
+                    chest: player.Chest || 0,
+                    spine: player.Spine || 0,
+                    pelvis: player.Pelvis || 0,
+                    leftArm: player.LeftArm || 0,
+                    rightArm: player.RightArm || 0,
+                    leftHand: player.LeftHand || 0,
+                    rightHand: player.RightHand || 0,
+                    leftLeg: player.LeftLeg || 0,
+                    rightLeg: player.RightLeg || 0,
+                    leftFoot: player.LeftFoot || 0,
+                    rightFoot: player.RightFoot || 0,
+                    body: player.Body || 0,
+                    headRate
+                });
+            }
+        });
+        
+        playersArray.sort((a, b) => b.total - a.total);
+        const avgHeadRate = totalHitsAll > 0 ? (totalHeadshotsAll / totalHitsAll * 100).toFixed(1) : 0;
+        %>
+        
+        <div class="hitstats-stats">
+            <div class="stat-card"><div class="stat-value"><%= playersArray.length %></div><div class="stat-label">Всего игроков</div></div>
+            <div class="stat-card"><div class="stat-value"><%= totalHitsAll.toLocaleString() %></div><div class="stat-label">Всего попаданий</div></div>
+            <div class="stat-card"><div class="stat-value"><%= totalHeadshotsAll.toLocaleString() %></div><div class="stat-label">Хедшотов</div></div>
+            <div class="stat-card"><div class="stat-value"><%= avgHeadRate %>%</div><div class="stat-label">Средний HS%</div></div>
+        </div>
+        
+        <div class="toolbar">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="Поиск по Steam ID или нику...">
+            </div>
+            <select class="sort-select" id="sortSelect">
+                <option value="total">По попаданиям</option>
+                <option value="head">По хедшотам</option>
+                <option value="headrate">По HS%</option>
+            </select>
+        </div>
+
+        <% if (playersArray.length === 0) { %>
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="6"/>
+                <circle cx="12" cy="12" r="2"/>
+            </svg>
+            <p>Нет данных о попаданиях</p>
+        </div>
+        <% } else { %>
+        <div class="players-grid" id="playersGrid">
+            <% playersArray.forEach((player) => { 
+                const arms = player.leftArm + player.rightArm + player.leftHand + player.rightHand;
+                const legs = player.leftLeg + player.rightLeg + player.leftFoot + player.rightFoot;
+            %>
+            <a href="/stats/<%= player.steamId %>" class="player-card" 
+               data-steamid="<%= player.steamId %>" 
+               data-name="<%= player.name.toLowerCase() %>"
+               data-total="<%= player.total %>" 
+               data-head="<%= player.head %>" 
+               data-headrate="<%= player.headRate %>">
+                <div class="player-card-header">
+                    <div class="player-avatar loading" data-steamid="<%= player.steamId %>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name"><%= player.name %></div>
+                        <div class="player-steamid"><%= player.steamId %></div>
+                    </div>
+                </div>
+                <div class="player-card-body">
+                    <div class="player-stats-row">
+                        <div class="player-stat">
+                            <div class="player-stat-value"><%= player.total %></div>
+                            <div class="player-stat-label">Попаданий</div>
+                        </div>
+                        <div class="player-stat">
+                            <div class="player-stat-value"><%= player.head %></div>
+                            <div class="player-stat-label">Хедшотов</div>
+                        </div>
+                        <div class="player-stat">
+                            <div class="player-stat-value"><%= player.headRate %>%</div>
+                            <div class="player-stat-label">HS%</div>
+                        </div>
+                    </div>
+                    <div class="mini-body-preview">
+                        <% if (player.head > 0) { %><span class="mini-body-part head">Голова: <%= player.head %></span><% } %>
+                        <% if (player.chest + player.spine > 0) { %><span class="mini-body-part chest">Торс: <%= player.chest + player.spine %></span><% } %>
+                        <% if (player.pelvis > 0) { %><span class="mini-body-part pelvis">Таз: <%= player.pelvis %></span><% } %>
+                        <% if (arms > 0) { %><span class="mini-body-part arms">Руки: <%= arms %></span><% } %>
+                        <% if (legs > 0) { %><span class="mini-body-part legs">Ноги: <%= legs %></span><% } %>
+                    </div>
+                </div>
+                <div class="player-card-footer">
+                    <span class="headshot-rate">Headshot: <span><%= player.headRate %>%</span></span>
+                    <span class="view-profile">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Подробнее
+                    </span>
+                </div>
+            </a>
+            <% }); %>
+        </div>
+        <% } %>
+    </div>
+
+    <script>
+        const playersData = <%- JSON.stringify(playersArray) %>;
+        
+        // Загрузка Steam аватаров
+        async function loadSteamAvatars() {
+            const steamIds = playersData.map(p => p.steamId);
+            const batchSize = 100;
+            
+            for (let i = 0; i < steamIds.length; i += batchSize) {
+                const batch = steamIds.slice(i, i + batchSize);
+                try {
+                    const res = await fetch('/api/steam/profiles?ids=' + batch.join(','));
+                    if (res.ok) {
+                        const profiles = await res.json();
+                        profiles.forEach(p => {
+                            const avatarEl = document.querySelector(`.player-avatar[data-steamid="${p.steamid}"]`);
+                            if (avatarEl && p.avatarmedium) {
+                                avatarEl.classList.remove('loading');
+                                avatarEl.innerHTML = `<img src="${p.avatarmedium}" alt="Avatar">`;
+                            }
+                        });
+                    }
+                } catch(e) {}
+            }
+        }
+        
+        loadSteamAvatars();
+        
+        // Поиск
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.player-card').forEach(card => {
+                const steamid = card.dataset.steamid.toLowerCase();
+                const name = card.dataset.name.toLowerCase();
+                card.style.display = (steamid.includes(query) || name.includes(query)) ? '' : 'none';
+            });
+        });
+        
+        // Сортировка
+        document.getElementById('sortSelect').addEventListener('change', function(e) {
+            const grid = document.getElementById('playersGrid');
+            const cards = [...grid.querySelectorAll('.player-card')];
+            
+            cards.sort((a, b) => {
+                switch(e.target.value) {
+                    case 'total': return b.dataset.total - a.dataset.total;
+                    case 'head': return b.dataset.head - a.dataset.head;
+                    case 'headrate': return b.dataset.headrate - a.dataset.headrate;
+                    default: return 0;
+                }
+            });
+            
+            cards.forEach(card => grid.appendChild(card));
+        });
+    </script>
+</body>
+</html>
