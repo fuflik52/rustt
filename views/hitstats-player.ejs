@@ -259,7 +259,7 @@
                     
                     const pieR = 70;
                     const pieCircumference = 2 * Math.PI * pieR;
-                    let pieCumulativePercent = 0;
+                    let pieCumulativeOffset = 0;
                     %>
                     <svg class="pie-chart" viewBox="0 0 200 200">
                         <!-- Background ring -->
@@ -268,19 +268,19 @@
                         <!-- Segments -->
                         <% pieData.forEach((slice, i) => {
                             const pct = slice.value / total;
-                            const dashOffset = pieCircumference * (1 - pct);
-                            const rot = pieCumulativePercent * 360 - 90;
+                            const segmentLength = pieCircumference * pct;
+                            const gapLength = pieCircumference - segmentLength;
                         %>
                         <circle class="pie-segment" 
                                 cx="100" cy="100" r="70"
                                 stroke="<%= slice.color %>"
-                                stroke-dasharray="<%= pieCircumference %>"
-                                stroke-dashoffset="<%= dashOffset %>"
-                                transform="rotate(<%= rot %> 100 100)"
+                                stroke-dasharray="<%= segmentLength %> <%= gapLength %>"
+                                stroke-dashoffset="<%= -pieCumulativeOffset %>"
+                                transform="rotate(-90 100 100)"
                                 data-name="<%= slice.name %>" 
                                 data-value="<%= slice.value %>" 
                                 data-percent="<%= (pct * 100).toFixed(1) %>"/>
-                        <% pieCumulativePercent += pct; }); %>
+                        <% pieCumulativeOffset += segmentLength; }); %>
                         
                         <!-- Center circle -->
                         <circle class="pie-center-circle" cx="100" cy="100" r="48"/>
